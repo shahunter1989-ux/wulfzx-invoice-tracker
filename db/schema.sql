@@ -223,3 +223,18 @@ for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "expenses_all_own" on public.expenses
 for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Data API grants
+-- RLS still scopes rows to each authenticated owner; these grants simply allow
+-- signed-in users to reach the tables through Supabase's REST/Data API.
+grant usage on schema public to authenticated;
+
+grant select, insert, update, delete on table public.profiles to authenticated;
+grant select, insert, update, delete on table public.company_settings to authenticated;
+grant select, insert, update, delete on table public.invoice_sequences to authenticated;
+grant select, insert, update, delete on table public.customers to authenticated;
+grant select, insert, update, delete on table public.invoices to authenticated;
+grant select, insert, update, delete on table public.invoice_items to authenticated;
+grant select, insert, update, delete on table public.payments to authenticated;
+grant select, insert, update, delete on table public.expense_categories to authenticated;
+grant select, insert, update, delete on table public.expenses to authenticated;
