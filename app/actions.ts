@@ -209,14 +209,19 @@ export async function createInvoiceAction(formData: FormData) {
 export async function deleteInvoiceAction(formData: FormData) {
   const { supabase, user } = await requireUser();
   const invoiceId = toText(formData.get("invoice_id"));
+  const returnTo = toText(formData.get("return_to"));
+  const safeReturnTo = ["/invoices", "/reports"].includes(returnTo) ? returnTo : "/invoices";
 
   if (!invoiceId) {
-    redirect("/invoices?error=Invoice%20record%20is%20required");
+    redirect(`${safeReturnTo}?error=Invoice%20record%20is%20required`);
   }
 
   const { error } = await supabase.from("invoices").delete().eq("id", invoiceId).eq("user_id", user.id);
 
   if (error) {
+    if (returnTo) {
+      redirect(`${safeReturnTo}?error=${encodeURIComponent(error.message)}`);
+    }
     redirect(`/invoices/${invoiceId}?error=${encodeURIComponent(error.message)}`);
   }
 
@@ -224,7 +229,7 @@ export async function deleteInvoiceAction(formData: FormData) {
   revalidatePath("/invoices");
   revalidatePath("/payments");
   revalidatePath("/reports");
-  redirect("/invoices?deleted=1");
+  redirect(`${safeReturnTo}?deleted=1`);
 }
 
 export async function markInvoiceStatusAction(formData: FormData) {

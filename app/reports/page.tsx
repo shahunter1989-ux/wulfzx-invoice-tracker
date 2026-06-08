@@ -1,10 +1,16 @@
 import Link from "next/link";
+import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
 import { StatCard } from "../../components/StatCard";
 import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { deleteInvoiceAction } from "../actions";
 
 export const dynamic = "force-dynamic";
+
+type ReportsPageProps = {
+  searchParams: Promise<{ deleted?: string; error?: string }>;
+};
 
 type Invoice = {
   id: string;
@@ -28,7 +34,8 @@ type Expense = {
   expense_categories: { name: string } | null;
 };
 
-export default async function ReportsPage() {
+export default async function ReportsPage({ searchParams }: ReportsPageProps) {
+  const params = await searchParams;
   const { supabase, user } = await requireUser();
   await ensureUserDefaults(supabase, user);
   const monthStart = new Date();
@@ -54,6 +61,9 @@ export default async function ReportsPage() {
         <p className="muted">Monthly sales, received payments, expenses, outstanding invoices, and overdue invoices.</p>
       </div>
 
+      {params.error ? <div className="notice error">{params.error}</div> : null}
+      {params.deleted ? <div className="notice success">Invoice deleted. Reports were recalculated from current records.</div> : null}
+
       <div className="grid grid-3">
         <StatCard label="Monthly Sales" value={formatCurrency(monthlySales)} />
         <StatCard label="Monthly Received" value={formatCurrency(monthlyReceived)} />
@@ -75,6 +85,7 @@ export default async function ReportsPage() {
                 <th>Paid</th>
                 <th>Balance</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -90,11 +101,20 @@ export default async function ReportsPage() {
                   <td>
                     <span className="status-pill">{invoice.status.replace("_", " ")}</span>
                   </td>
+                  <td>
+                    <form action={deleteInvoiceAction}>
+                      <input type="hidden" name="invoice_id" value={invoice.id} />
+                      <input type="hidden" name="return_to" value="/reports" />
+                      <ConfirmSubmitButton className="secondary-button danger-button compact-action" confirmMessage={`Delete invoice ${invoice.invoice_number}? This cannot be undone.`}>
+                        Delete
+                      </ConfirmSubmitButton>
+                    </form>
+                  </td>
                 </tr>
               ))}
               {outstandingInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="empty-cell">
+                  <td colSpan={7} className="empty-cell">
                     No outstanding invoices.
                   </td>
                 </tr>

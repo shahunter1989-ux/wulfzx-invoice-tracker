@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
 import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { deleteInvoiceAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +58,7 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
               <th>Paid</th>
               <th>Balance</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -73,11 +76,20 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
                 <td>
                   <span className="status-pill">{invoice.status.replace("_", " ")}</span>
                 </td>
+                <td>
+                  <form action={deleteInvoiceAction}>
+                    <input type="hidden" name="invoice_id" value={invoice.id} />
+                    <input type="hidden" name="return_to" value="/invoices" />
+                    <ConfirmSubmitButton className="secondary-button danger-button compact-action" confirmMessage={`Delete invoice ${invoice.invoice_number}? This cannot be undone.`}>
+                      Delete
+                    </ConfirmSubmitButton>
+                  </form>
+                </td>
               </tr>
             ))}
             {(invoices ?? []).length === 0 ? (
               <tr>
-                <td colSpan={8} className="empty-cell">
+                <td colSpan={9} className="empty-cell">
                   No invoices yet. Create one after adding a customer.
                 </td>
               </tr>
