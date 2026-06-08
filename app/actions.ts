@@ -312,6 +312,67 @@ export async function createExpenseAction(formData: FormData) {
   redirect("/receipts");
 }
 
+export async function updateExpenseAction(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  await ensureUserDefaults(supabase, user);
+
+  const expenseId = toText(formData.get("expense_id"));
+  const amount = toMoney(formData.get("amount"));
+
+  if (!expenseId) {
+    redirect("/receipts?error=Expense%20record%20is%20required");
+  }
+
+  if (amount <= 0) {
+    redirect(`/receipts/${expenseId}/edit?error=Amount%20is%20required`);
+  }
+
+  const { error } = await supabase
+    .from("expenses")
+    .update({
+      user_id: user.id,
+      category_id: toText(formData.get("category_id")) || null,
+      vendor: toText(formData.get("vendor")) || null,
+      expense_date: toText(formData.get("expense_date")) || new Date().toISOString().slice(0, 10),
+      amount,
+      payment_method: toText(formData.get("payment_method")) || "other",
+      receipt_url: toText(formData.get("receipt_url")) || null,
+      notes: toText(formData.get("notes")) || null
+    })
+    .eq("id", expenseId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/receipts/${expenseId}/edit?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/receipts");
+  revalidatePath(`/receipts/${expenseId}/edit`);
+  revalidatePath("/reports");
+  redirect("/receipts?saved=1");
+}
+
+export async function deleteExpenseAction(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const expenseId = toText(formData.get("expense_id"));
+
+  if (!expenseId) {
+    redirect("/receipts?error=Expense%20record%20is%20required");
+  }
+
+  const { error } = await supabase.from("expenses").delete().eq("id", expenseId).eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/receipts?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/receipts");
+  revalidatePath("/reports");
+  redirect("/receipts?deleted=1");
+}
+
 export async function updateSettingsAction(formData: FormData) {
   const { supabase, user } = await requireUser();
   const { error } = await supabase.from("company_settings").upsert(

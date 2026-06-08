@@ -1,12 +1,14 @@
-import { createExpenseAction } from "../actions";
+import Link from "next/link";
+import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
 import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { createExpenseAction, deleteExpenseAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
 type ReceiptsPageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ deleted?: string; error?: string; saved?: string }>;
 };
 
 type Category = {
@@ -28,11 +30,13 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
   const params = await searchParams;
   const { supabase, user } = await requireUser();
   await ensureUserDefaults(supabase, user);
-  const { data: categories } = await supabase.from("expense_categories").select("id,name").order("name");
-  const { data: expenses } = await supabase
-    .from("expenses")
-    .select("id,vendor,expense_date,amount,payment_method,receipt_url,expense_categories(name)")
-    .order("expense_date", { ascending: false });
+  const [{ data: categories }, { data: expenses }] = await Promise.all([
+    supabase.from("expense_categories").select("id,name").order("name"),
+    supabase
+      .from("expenses")
+      .select("id,vendor,expense_date,amount,payment_method,receipt_url,expense_categories(name)")
+      .order("expense_date", { ascending: false })
+  ]);
 
   return (
     <section className="grid">
@@ -40,6 +44,8 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
         <h1>Receipts / Expenses</h1>
         <p className="muted">Track business spending, vendors, categories, and receipt links.</p>
         {params.error ? <div className="notice error">{params.error}</div> : null}
+        {params.saved ? <div className="notice success">Expense updated. Dashboard and reports were recalculated.</div> : null}
+        {params.deleted ? <div className="notice success">Expense deleted. Dashboard and reports were recalculated.</div> : null}
         <form action={createExpenseAction} className="grid form-grid">
           <div className="two-column">
             <label>
@@ -50,7 +56,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
               Category
               <select name="category_id">
                 <option value="">Uncategorized</option>
-                {((categories ?? []) as unknown as Category[]).map((category) => (
+                {((categories ?? []) as Category[]).map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
@@ -107,22 +113,39 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
                 <th>Amount</th>
                 <th>Method</th>
                 <th>Receipt</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {((expenses ?? []) as unknown as Expense[]).map((expense) => (
                 <tr key={expense.id}>
                   <td>{formatDate(expense.expense_date)}</td>
-                  <td>{expense.vendor || "—"}</td>
+                  <td>{expense.vendor || "-"}</td>
                   <td>{expense.expense_categories?.name || "Uncategorized"}</td>
                   <td>{formatCurrency(expense.amount)}</td>
                   <td>{expense.payment_method.replace("_", " ")}</td>
-                  <td>{expense.receipt_url ? <a href={expense.receipt_url}>Open</a> : "—"}</td>
+                  <td>{expense.receipt_url ? <a href={expense.receipt_url}>Open</a> : "-"}</td>
+                  <td>
+                    <div className="action-row">
+                      <Link className="secondary-link compact-action" href={`/receipts/${expense.id}/edit`}>
+                        Edit
+                      </Link>
+                      <form action={deleteExpenseAction}>
+                        <input type="hidden" name="expense_id" value={expense.id} />
+                        <ConfirmSubmitButton
+                          className="secondary-button danger-button compact-action"
+                          confirmMessage={`Delete ${expense.vendor || "this expense"} for ${formatCurrency(expense.amount)}? This cannot be undone.`}
+                        >
+                          Delete
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {(expenses ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="empty-cell">
+                  <td colSpan={7} className="empty-cell">
                     No expenses recorded yet.
                   </td>
                 </tr>
