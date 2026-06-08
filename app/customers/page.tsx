@@ -1,9 +1,15 @@
 import Link from "next/link";
+import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
 import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults } from "../../lib/data";
 import { formatDate } from "../../lib/format";
+import { deleteCustomerAction } from "../actions";
 
 export const dynamic = "force-dynamic";
+
+type CustomersPageProps = {
+  searchParams: Promise<{ deleted?: string; error?: string; saved?: string }>;
+};
 
 type Customer = {
   id: string;
@@ -14,10 +20,30 @@ type Customer = {
   created_at: string;
 };
 
-export default async function CustomersPage() {
+type InvoiceCustomer = {
+  customer_id: string | null;
+};
+
+export default async function CustomersPage({ searchParams }: CustomersPageProps) {
+  const params = await searchParams;
   const { supabase, user } = await requireUser();
   await ensureUserDefaults(supabase, user);
-  const { data: customers } = await supabase.from("customers").select("id,name,contact_name,email,phone,created_at").order("created_at", { ascending: false });
+  const [{ data: customers }, { data: invoiceCustomers }] = await Promise.all([
+    supabase.from("customers").select("id,name,contact_name,email,phone,created_at").order("created_at", { ascending: false }),
+    supabase.from("invoices").select("customer_id").not("customer_id", "is", null)
+  ]);
+
+  const invoiceCounts = ((invoiceCustomers ?? []) as InvoiceCustomer[]).reduce<Record<string, number>>((counts, invoice) => {
+    if (invoice.customer_id) {
+      counts[invoice.customer_id] = (counts[invoice.customer_id] ?? 0) + 1;
+    }
+    return counts;
+  }, {});
+
+  const rows = ((customers ?? []) as Customer[]).map((customer) => ({
+    ...customer,
+    invoiceCount: invoiceCounts[customer.id] ?? 0
+  }));
 
   return (
     <section className="card">
@@ -31,6 +57,10 @@ export default async function CustomersPage() {
         </Link>
       </div>
 
+      {params.error ? <div className="notice error">{params.error}</div> : null}
+      {params.saved ? <div className="notice success">Customer updated.</div> : null}
+      {params.deleted ? <div className="notice success">Customer deleted.</div> : null}
+
       <div className="table-wrap">
         <table>
           <thead>
@@ -40,21 +70,39 @@ export default async function CustomersPage() {
               <th>Email</th>
               <th>Phone</th>
               <th>Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {((customers ?? []) as unknown as Customer[]).map((customer) => (
+            {rows.map((customer) => (
               <tr key={customer.id}>
                 <td>{customer.name}</td>
-                <td>{customer.contact_name || "—"}</td>
-                <td>{customer.email || "—"}</td>
-                <td>{customer.phone || "—"}</td>
+                <td>{customer.contact_name || "-"}</td>
+                <td>{customer.email || "-"}</td>
+                <td>{customer.phone || "-"}</td>
                 <td>{formatDate(customer.created_at.slice(0, 10))}</td>
+                <td>
+                  <div className="action-row">
+                    <Link className="secondary-link compact-action" href={`/customers/${customer.id}/edit`}>
+                      Edit
+                    </Link>
+                    {customer.invoiceCount === 0 ? (
+                      <form action={deleteCustomerAction}>
+                        <input type="hidden" name="customer_id" value={customer.id} />
+                        <ConfirmSubmitButton className="secondary-button danger-button compact-action" confirmMessage={`Delete ${customer.name}? This cannot be undone.`}>
+                          Delete
+                        </ConfirmSubmitButton>
+                      </form>
+                    ) : (
+                      <span className="muted small-note">Delete blocked: has invoices</span>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
-            {(customers ?? []).length === 0 ? (
+            {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="empty-cell">
+                <td colSpan={6} className="empty-cell">
                   No customers yet. Add one before creating your first invoice.
                 </td>
               </tr>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { markInvoiceStatusAction, recordPaymentAction } from "../../actions";
+import { deleteInvoiceAction, markInvoiceStatusAction, recordPaymentAction } from "../../actions";
+import { ConfirmSubmitButton } from "../../../components/ConfirmSubmitButton";
 import { PrintButton } from "../../../components/PrintButton";
 import { requireUser } from "../../../lib/auth";
 import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../../lib/data";
@@ -196,6 +197,17 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
               <button type="submit" className="secondary-button danger-button">
                 Cancel
               </button>
+            </form>
+          </div>
+
+          <div className="danger-zone">
+            <h3>Remove Invoice</h3>
+            <p className="muted">Deleting this invoice also removes its line items and payment history.</p>
+            <form action={deleteInvoiceAction}>
+              <input type="hidden" name="invoice_id" value={detail.id} />
+              <ConfirmSubmitButton className="secondary-button danger-button" confirmMessage={`Delete invoice ${detail.invoice_number}? This cannot be undone.`}>
+                Delete Invoice
+              </ConfirmSubmitButton>
             </form>
           </div>
 

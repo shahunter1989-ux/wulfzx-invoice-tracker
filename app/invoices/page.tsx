@@ -5,6 +5,10 @@ import { formatCurrency, formatDate } from "../../lib/format";
 
 export const dynamic = "force-dynamic";
 
+type InvoicesPageProps = {
+  searchParams: Promise<{ deleted?: string; error?: string }>;
+};
+
 type InvoiceRow = {
   id: string;
   invoice_number: string;
@@ -16,7 +20,8 @@ type InvoiceRow = {
   payments: { amount: number | string | null }[] | null;
 };
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({ searchParams }: InvoicesPageProps) {
+  const params = await searchParams;
   const { supabase, user } = await requireUser();
   await ensureUserDefaults(supabase, user);
   const { data: invoices } = await supabase
@@ -35,6 +40,9 @@ export default async function InvoicesPage() {
           New Invoice
         </Link>
       </div>
+
+      {params.error ? <div className="notice error">{params.error}</div> : null}
+      {params.deleted ? <div className="notice success">Invoice deleted.</div> : null}
 
       <div className="table-wrap">
         <table>

@@ -192,6 +192,15 @@ td a {
   color: #fecaca;
 }
 
+.compact-action {
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.small-note {
+  font-size: 13px;
+}
+
 .action-row {
   display: flex;
   align-items: center;
@@ -372,6 +381,20 @@ td a {
 
 .mini-list span {
   color: var(--muted);
+}
+
+.danger-zone {
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  margin: 24px 0;
+  padding: 14px;
+}
+
+.danger-zone h3,
+.danger-zone p {
+  margin: 0;
 }
 
 @media (max-width: 700px) {

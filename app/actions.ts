@@ -57,6 +57,73 @@ export async function createCustomerAction(formData: FormData) {
   redirect("/customers");
 }
 
+export async function updateCustomerAction(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const customerId = toText(formData.get("customer_id"));
+  const name = toText(formData.get("name"));
+
+  if (!customerId) {
+    redirect("/customers?error=Customer%20record%20is%20required");
+  }
+
+  if (!name) {
+    redirect(`/customers/${customerId}/edit?error=Customer%20name%20is%20required`);
+  }
+
+  const { error } = await supabase
+    .from("customers")
+    .update({
+      name,
+      contact_name: toText(formData.get("contact_name")) || null,
+      email: toText(formData.get("email")) || null,
+      phone: toText(formData.get("phone")) || null,
+      address: toText(formData.get("address")) || null,
+      notes: toText(formData.get("notes")) || null
+    })
+    .eq("id", customerId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/customers/${customerId}/edit?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/customers");
+  revalidatePath(`/customers/${customerId}/edit`);
+  redirect("/customers?saved=1");
+}
+
+export async function deleteCustomerAction(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const customerId = toText(formData.get("customer_id"));
+
+  if (!customerId) {
+    redirect("/customers?error=Customer%20record%20is%20required");
+  }
+
+  const { count, error: countError } = await supabase
+    .from("invoices")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", customerId)
+    .eq("user_id", user.id);
+
+  if (countError) {
+    redirect(`/customers?error=${encodeURIComponent(countError.message)}`);
+  }
+
+  if ((count ?? 0) > 0) {
+    redirect("/customers?error=Customers%20with%20invoices%20cannot%20be%20deleted");
+  }
+
+  const { error } = await supabase.from("customers").delete().eq("id", customerId).eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/customers?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/customers");
+  redirect("/customers?deleted=1");
+}
+
 export async function createInvoiceAction(formData: FormData) {
   const { supabase, user } = await requireUser();
   await ensureUserDefaults(supabase, user);
@@ -137,6 +204,27 @@ export async function createInvoiceAction(formData: FormData) {
 
   revalidatePath("/invoices");
   redirect(`/invoices/${invoice.id}`);
+}
+
+export async function deleteInvoiceAction(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const invoiceId = toText(formData.get("invoice_id"));
+
+  if (!invoiceId) {
+    redirect("/invoices?error=Invoice%20record%20is%20required");
+  }
+
+  const { error } = await supabase.from("invoices").delete().eq("id", invoiceId).eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/invoices/${invoiceId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/invoices");
+  revalidatePath("/payments");
+  revalidatePath("/reports");
+  redirect("/invoices?deleted=1");
 }
 
 export async function markInvoiceStatusAction(formData: FormData) {
