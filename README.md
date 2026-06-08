@@ -80,3 +80,18 @@ cd wulfzx-invoice-tracker
 ```
 
 Then add Supabase and continue building from the included structure.
+
+## Supabase Setup
+
+1. Create a Supabase project.
+2. Open the Supabase SQL editor and run `db/schema.sql`.
+3. In Supabase Auth, create the owner email/password user.
+4. Disable public signup for the owner-only version.
+5. Add these environment variables locally and in Vercel:
+
+```txt
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+After the variables are configured, sign in at `/login`, add a customer, create an invoice, then use the invoice detail page to print or download the invoice PDF.

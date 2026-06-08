@@ -34,8 +34,49 @@ create table if not exists public.company_settings (
   default_tax_rate numeric(10, 4) not null default 0,
   invoice_prefix text not null default 'WZX',
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  unique(user_id)
 );
+
+-- Per-user invoice sequence, used for safe automatic WZX-YYYY-0001 numbers.
+create table if not exists public.invoice_sequences (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  invoice_year integer not null,
+  prefix text not null default 'WZX',
+  last_sequence integer not null default 0,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, invoice_year, prefix)
+);
+
+create or replace function public.next_invoice_number(p_prefix text, p_year integer)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  next_sequence integer;
+  current_user_id uuid;
+begin
+  current_user_id := auth.uid();
+
+  if current_user_id is null then
+    raise exception 'Authentication required';
+  end if;
+
+  insert into public.invoice_sequences (user_id, invoice_year, prefix, last_sequence)
+  values (current_user_id, p_year, p_prefix, 1)
+  on conflict (user_id, invoice_year, prefix)
+  do update set
+    last_sequence = public.invoice_sequences.last_sequence + 1,
+    updated_at = now()
+  returning last_sequence into next_sequence;
+
+  return p_prefix || '-' || p_year::text || '-' || lpad(next_sequence::text, 4, '0');
+end;
+$$;
+
+grant execute on function public.next_invoice_number(text, integer) to authenticated;
 
 -- Customers / clients
 create table if not exists public.customers (
@@ -146,6 +187,7 @@ alter table public.profiles enable row level security;
 alter table public.company_settings enable row level security;
 alter table public.customers enable row level security;
 alter table public.invoices enable row level security;
+alter table public.invoice_sequences enable row level security;
 alter table public.invoice_items enable row level security;
 alter table public.payments enable row level security;
 alter table public.expense_categories enable row level security;
@@ -165,6 +207,9 @@ create policy "customers_all_own" on public.customers
 for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "invoices_all_own" on public.invoices
+for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "invoice_sequences_all_own" on public.invoice_sequences
 for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "invoice_items_all_own" on public.invoice_items

@@ -1,3 +1,6 @@
+import { signOutAction } from "../app/actions";
+import { getUserIfConfigured } from "../lib/auth";
+
 const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/customers", label: "Customers" },
@@ -8,7 +11,9 @@ const links = [
   { href: "/settings", label: "Settings" }
 ];
 
-export function Sidebar() {
+export async function Sidebar() {
+  const { user } = await getUserIfConfigured();
+
   return (
     <aside style={{ borderRight: "1px solid var(--border)", padding: 24, background: "var(--surface)" }}>
       <h2 style={{ marginTop: 0 }}>Wulfzx</h2>
@@ -20,6 +25,13 @@ export function Sidebar() {
           </a>
         ))}
       </nav>
+      {user ? (
+        <form action={signOutAction} style={{ marginTop: 32 }}>
+          <button type="submit" className="secondary-button" style={{ width: "100%" }}>
+            Logout
+          </button>
+        </form>
+      ) : null}
     </aside>
   );
 }

@@ -12,6 +12,7 @@
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "next": "latest",
+    "pdf-lib": "^1.17.1",
     "react": "latest",
     "react-dom": "latest"
   },
