@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OfflineForm } from "../../components/OfflineForm";
 import { recordPaymentAction } from "../actions";
 import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults, invoiceBalance } from "../../lib/data";
@@ -43,7 +44,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
         <h1>Payments Received</h1>
         <p className="muted">Track money received against invoices, including partial payments.</p>
         {params.error ? <div className="notice error">{params.error}</div> : null}
-        <form action={recordPaymentAction} className="grid form-grid">
+        <OfflineForm action={recordPaymentAction} draftType="payment" className="grid form-grid">
           <label>
             Invoice
             <select name="invoice_id" required>
@@ -89,7 +90,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
             <textarea name="notes" rows={3} />
           </label>
           <button type="submit">Save Payment</button>
-        </form>
+        </OfflineForm>
       </div>
 
       <div className="card">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteInvoiceAction, markInvoiceStatusAction, recordPaymentAction } from "../../actions";
 import { ConfirmSubmitButton } from "../../../components/ConfirmSubmitButton";
+import { OfflineForm } from "../../../components/OfflineForm";
 import { PrintButton } from "../../../components/PrintButton";
 import { requireUser } from "../../../lib/auth";
 import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../../lib/data";
@@ -212,7 +213,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
           </div>
 
           <h3>Record Payment</h3>
-          <form action={recordPaymentAction} className="grid form-grid">
+          <OfflineForm action={recordPaymentAction} draftType="payment" className="grid form-grid">
             <input type="hidden" name="invoice_id" value={detail.id} />
             <label>
               Payment date
@@ -244,7 +245,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
               <textarea name="notes" rows={3} />
             </label>
             <button type="submit">Save Payment</button>
-          </form>
+          </OfflineForm>
 
           <h3>Payment History</h3>
           <div className="mini-list">

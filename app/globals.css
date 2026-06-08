@@ -397,6 +397,46 @@ td a {
   margin: 0;
 }
 
+.offline-status {
+  align-items: center;
+  background: rgba(23, 23, 27, 0.94);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  bottom: 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 12px;
+  position: fixed;
+  right: 18px;
+  z-index: 30;
+}
+
+.offline-status a {
+  color: #7dd3fc;
+  font-weight: 700;
+}
+
+.online-dot,
+.offline-dot {
+  border-radius: 999px;
+  display: inline-block;
+  height: 10px;
+  width: 10px;
+}
+
+.online-dot {
+  background: #22c55e;
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.45);
+}
+
+.offline-dot {
+  background: #f97316;
+  box-shadow: 0 0 18px rgba(249, 115, 22, 0.45);
+}
+
 @media (max-width: 700px) {
   body::before {
     background-size: min(900px, 150vw) auto;
@@ -438,6 +478,12 @@ td a {
   .invoice-meta {
     justify-items: start;
   }
+
+  .offline-status {
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+  }
 }
 
 @media print {
@@ -448,6 +494,7 @@ td a {
   body::before,
   body::after,
   .page-shell > aside,
+  .offline-status,
   .no-print {
     display: none !important;
   }

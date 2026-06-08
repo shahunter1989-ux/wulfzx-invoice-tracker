@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { OfflineStatus } from "../components/OfflineStatus";
 import { Sidebar } from "../components/Sidebar";
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Sidebar />
           <main className="main-content">{children}</main>
         </div>
+        <OfflineStatus />
       </body>
     </html>
   );

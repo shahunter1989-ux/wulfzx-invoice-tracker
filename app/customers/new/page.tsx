@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OfflineForm } from "../../../components/OfflineForm";
 import { createCustomerAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export default async function NewCustomerPage({ searchParams }: NewCustomerPageP
 
       {params.error ? <div className="notice error">{params.error}</div> : null}
 
-      <form action={createCustomerAction} className="grid form-grid">
+      <OfflineForm action={createCustomerAction} draftType="customer" className="grid form-grid">
         <label>
           Customer or client name
           <input name="name" required />
@@ -50,7 +51,7 @@ export default async function NewCustomerPage({ searchParams }: NewCustomerPageP
           <textarea name="notes" rows={3} />
         </label>
         <button type="submit">Save Customer</button>
-      </form>
+      </OfflineForm>
     </section>
   );
 }

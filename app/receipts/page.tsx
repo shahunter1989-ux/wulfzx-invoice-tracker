@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
+import { OfflineForm } from "../../components/OfflineForm";
 import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
@@ -46,7 +47,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
         {params.error ? <div className="notice error">{params.error}</div> : null}
         {params.saved ? <div className="notice success">Expense updated. Dashboard and reports were recalculated.</div> : null}
         {params.deleted ? <div className="notice success">Expense deleted. Dashboard and reports were recalculated.</div> : null}
-        <form action={createExpenseAction} className="grid form-grid">
+        <OfflineForm action={createExpenseAction} draftType="expense" className="grid form-grid">
           <div className="two-column">
             <label>
               Vendor
@@ -98,7 +99,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
             <textarea name="notes" rows={3} />
           </label>
           <button type="submit">Save Expense</button>
-        </form>
+        </OfflineForm>
       </div>
 
       <div className="card">

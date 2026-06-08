@@ -8,6 +8,7 @@ const links = [
   { href: "/payments", label: "Payments" },
   { href: "/receipts", label: "Receipts" },
   { href: "/reports", label: "Reports" },
+  { href: "/offline", label: "Offline Sync" },
   { href: "/settings", label: "Settings" }
 ];
 

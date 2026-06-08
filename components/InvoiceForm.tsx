@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { createInvoiceAction } from "../app/actions";
 import { calculateInvoiceTotal, calculateLineTotal, calculateSubtotal } from "../lib/calculations";
 import { formatCurrency } from "../lib/format";
+import { OfflineForm } from "./OfflineForm";
 
 type CustomerOption = {
   id: string;
@@ -46,7 +47,7 @@ export function InvoiceForm({ customers }: { customers: CustomerOption[] }) {
   }
 
   return (
-    <form action={createInvoiceAction} className="grid form-grid">
+    <OfflineForm action={createInvoiceAction} draftType="invoice" className="grid form-grid">
       <label>
         Customer
         <select name="customer_id" required>
@@ -135,6 +136,6 @@ export function InvoiceForm({ customers }: { customers: CustomerOption[] }) {
       <button type="submit" disabled={customers.length === 0}>
         Save Invoice
       </button>
-    </form>
+    </OfflineForm>
   );
 }
