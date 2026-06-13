@@ -9,6 +9,7 @@ import { toMoney, toText } from "../lib/format";
 import { getUserIfConfigured } from "../lib/auth";
 import { createClient } from "../lib/supabase/server";
 import { createAdminClient } from "../lib/supabase/admin";
+import { cleanEnvValue } from "../lib/supabase/config";
 import { logAuditEvent } from "../lib/audit";
 import { requireOwner, requireWorkspace, type WorkspaceContext, type WorkspaceRole } from "../lib/workspace";
 
@@ -526,7 +527,8 @@ export async function inviteTeamMemberAction(formData: FormData) {
   let invitedUserId: string | null = null;
   try {
     const admin = createAdminClient();
-    const redirectTo = process.env.NEXT_PUBLIC_APP_URL || "https://wulfzx-invoice-tracker.vercel.app/login";
+    const appUrl = cleanEnvValue(process.env.NEXT_PUBLIC_APP_URL) || "https://wulfzx-invoice-tracker.vercel.app";
+    const redirectTo = `${appUrl.replace(/\/$/, "")}/auth/callback?next=/submit`;
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       redirectTo,
       data: { workspace_id: workspace.id, role }
