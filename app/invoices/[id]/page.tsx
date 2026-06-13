@@ -4,9 +4,9 @@ import { deleteInvoiceAction, markInvoiceStatusAction, recordPaymentAction } fro
 import { ConfirmSubmitButton } from "../../../components/ConfirmSubmitButton";
 import { OfflineForm } from "../../../components/OfflineForm";
 import { PrintButton } from "../../../components/PrintButton";
-import { requireUser } from "../../../lib/auth";
 import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../../lib/data";
 import { formatCurrency, formatDate } from "../../../lib/format";
+import { requireOwner } from "../../../lib/workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -53,8 +53,8 @@ type Invoice = {
 export default async function InvoiceDetailPage({ params, searchParams }: InvoiceDetailPageProps) {
   const { id } = await params;
   const query = await searchParams;
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
 
   const { data: invoice } = await supabase
     .from("invoices")
@@ -62,6 +62,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
       "id,invoice_number,status,issue_date,due_date,subtotal,discount_amount,tax_amount,total_amount,notes,terms,customers(name,contact_name,email,phone,address),invoice_items(id,description,quantity,unit_price,line_total),payments(id,payment_date,amount,payment_method,reference_number)"
     )
     .eq("id", id)
+    .eq("workspace_id", workspace.id)
     .single();
 
   if (!invoice) notFound();
@@ -253,7 +254,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
               <div key={payment.id}>
                 <strong>{formatCurrency(payment.amount)}</strong>
                 <span>
-                  {formatDate(payment.payment_date)} · {payment.payment_method.replace("_", " ")}
+                  {formatDate(payment.payment_date)} - {payment.payment_method.replace("_", " ")}
                 </span>
               </div>
             ))}

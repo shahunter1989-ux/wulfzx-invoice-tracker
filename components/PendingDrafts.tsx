@@ -48,7 +48,7 @@ export function PendingDrafts() {
       <div className="page-header">
         <div>
           <h1>Pending Offline Drafts</h1>
-          <p className="muted">Drafts stay on this device until internet returns and sync succeeds.</p>
+          <p className="muted">Drafts stay on this device until internet returns. Owner drafts create records; submitter drafts enter owner review.</p>
         </div>
         <button type="button" onClick={() => void runSync()} disabled={syncing || drafts.length === 0}>
           {syncing ? "Syncing" : "Sync Now"}

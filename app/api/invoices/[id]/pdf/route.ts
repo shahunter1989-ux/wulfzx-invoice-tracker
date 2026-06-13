@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { requireUser } from "../../../../../lib/auth";
 import { formatDate } from "../../../../../lib/format";
+import { logAuditEvent } from "../../../../../lib/audit";
+import { requireOwner } from "../../../../../lib/workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -36,13 +37,14 @@ type Invoice = {
 
 export async function GET(_request: Request, context: RouteContext) {
   const { id } = await context.params;
-  const { supabase } = await requireUser();
+  const { supabase, user, workspace } = await requireOwner();
   const { data: invoice } = await supabase
     .from("invoices")
     .select(
       "invoice_number,status,issue_date,due_date,subtotal,discount_amount,tax_amount,total_amount,notes,terms,customers(name,contact_name,email,phone,address),invoice_items(description,quantity,unit_price,line_total)"
     )
     .eq("id", id)
+    .eq("workspace_id", workspace.id)
     .single();
 
   if (!invoice) {
@@ -151,6 +153,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const bytes = await pdf.save();
   const body = new ArrayBuffer(bytes.byteLength);
   new Uint8Array(body).set(bytes);
+  await logAuditEvent(supabase, { workspaceId: workspace.id, actorId: user.id, action: "export_pdf", entityType: "invoice", entityId: id });
   return new Response(body, {
     headers: {
       "Content-Type": "application/pdf",

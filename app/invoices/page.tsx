@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
-import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { requireOwner } from "../../lib/workspace";
 import { deleteInvoiceAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -24,11 +24,12 @@ type InvoiceRow = {
 
 export default async function InvoicesPage({ searchParams }: InvoicesPageProps) {
   const params = await searchParams;
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
   const { data: invoices } = await supabase
     .from("invoices")
     .select("id,invoice_number,status,issue_date,due_date,total_amount,customers(name),payments(amount)")
+    .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: false });
 
   return (

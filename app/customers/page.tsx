@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
-import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults } from "../../lib/data";
 import { formatDate } from "../../lib/format";
+import { requireOwner } from "../../lib/workspace";
 import { deleteCustomerAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -26,11 +26,11 @@ type InvoiceCustomer = {
 
 export default async function CustomersPage({ searchParams }: CustomersPageProps) {
   const params = await searchParams;
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
   const [{ data: customers }, { data: invoiceCustomers }] = await Promise.all([
-    supabase.from("customers").select("id,name,contact_name,email,phone,created_at").order("created_at", { ascending: false }),
-    supabase.from("invoices").select("customer_id").not("customer_id", "is", null)
+    supabase.from("customers").select("id,name,contact_name,email,phone,created_at").eq("workspace_id", workspace.id).order("created_at", { ascending: false }),
+    supabase.from("invoices").select("customer_id").eq("workspace_id", workspace.id).not("customer_id", "is", null)
   ]);
 
   const invoiceCounts = ((invoiceCustomers ?? []) as InvoiceCustomer[]).reduce<Record<string, number>>((counts, invoice) => {

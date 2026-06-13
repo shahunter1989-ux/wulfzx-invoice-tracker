@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
 import { OfflineForm } from "../../components/OfflineForm";
-import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { requireOwner } from "../../lib/workspace";
 import { createExpenseAction, deleteExpenseAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -29,13 +29,14 @@ type Expense = {
 
 export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) {
   const params = await searchParams;
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
   const [{ data: categories }, { data: expenses }] = await Promise.all([
-    supabase.from("expense_categories").select("id,name").order("name"),
+    supabase.from("expense_categories").select("id,name").eq("workspace_id", workspace.id).order("name"),
     supabase
       .from("expenses")
       .select("id,vendor,expense_date,amount,payment_method,receipt_url,expense_categories(name)")
+      .eq("workspace_id", workspace.id)
       .order("expense_date", { ascending: false })
   ]);
 

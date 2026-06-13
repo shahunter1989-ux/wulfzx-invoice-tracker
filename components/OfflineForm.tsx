@@ -29,7 +29,7 @@ export function OfflineForm({ action, draftType, className, children }: OfflineF
 
     const payload = formDataToPayload(new FormData(form));
     await addOfflineDraft(draftType, payload);
-    setMessage(`Saved this ${TYPE_LABELS[draftType]} on this device. It will sync when internet returns.`);
+    setMessage(`Saved this ${TYPE_LABELS[draftType]} on this device. It will sync when internet returns. Submit-only users sync into owner review.`);
   }
 
   return (

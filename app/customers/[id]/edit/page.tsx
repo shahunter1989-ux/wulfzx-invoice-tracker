@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { updateCustomerAction } from "../../../actions";
-import { requireUser } from "../../../../lib/auth";
 import { ensureUserDefaults } from "../../../../lib/data";
+import { requireOwner } from "../../../../lib/workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +24,14 @@ type Customer = {
 export default async function EditCustomerPage({ params, searchParams }: EditCustomerPageProps) {
   const { id } = await params;
   const query = await searchParams;
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
 
   const { data: customer } = await supabase
     .from("customers")
     .select("id,name,contact_name,email,phone,address,notes")
     .eq("id", id)
+    .eq("workspace_id", workspace.id)
     .single();
 
   if (!customer) notFound();

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { OfflineForm } from "../../components/OfflineForm";
 import { recordPaymentAction } from "../actions";
-import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults, invoiceBalance } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { requireOwner } from "../../lib/workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -30,12 +30,17 @@ type PaymentRow = {
 
 export default async function PaymentsPage({ searchParams }: PaymentsPageProps) {
   const params = await searchParams;
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
-  const { data: invoices } = await supabase.from("invoices").select("id,invoice_number,total_amount,customers(name),payments(amount)").order("created_at", { ascending: false });
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
+  const { data: invoices } = await supabase
+    .from("invoices")
+    .select("id,invoice_number,total_amount,customers(name),payments(amount)")
+    .eq("workspace_id", workspace.id)
+    .order("created_at", { ascending: false });
   const { data: payments } = await supabase
     .from("payments")
     .select("id,payment_date,amount,payment_method,reference_number,invoices(id,invoice_number,customers(name))")
+    .eq("workspace_id", workspace.id)
     .order("payment_date", { ascending: false });
 
   return (
@@ -51,7 +56,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               <option value="">Select invoice</option>
               {((invoices ?? []) as unknown as InvoiceOption[]).map((invoice) => (
                 <option key={invoice.id} value={invoice.id}>
-                  {invoice.invoice_number} · {invoice.customers?.name || "No customer"} · Balance {formatCurrency(invoiceBalance(invoice))}
+                  {invoice.invoice_number} - {invoice.customers?.name || "No customer"} - Balance {formatCurrency(invoiceBalance(invoice))}
                 </option>
               ))}
             </select>
@@ -110,8 +115,8 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               {((payments ?? []) as unknown as PaymentRow[]).map((payment) => (
                 <tr key={payment.id}>
                   <td>{formatDate(payment.payment_date)}</td>
-                  <td>{payment.invoices ? <Link href={`/invoices/${payment.invoices.id}`}>{payment.invoices.invoice_number}</Link> : "—"}</td>
-                  <td>{payment.invoices?.customers?.name || "—"}</td>
+                  <td>{payment.invoices ? <Link href={`/invoices/${payment.invoices.id}`}>{payment.invoices.invoice_number}</Link> : "-"}</td>
+                  <td>{payment.invoices?.customers?.name || "-"}</td>
                   <td>{formatCurrency(payment.amount)}</td>
                   <td>{payment.payment_method.replace("_", " ")}</td>
                 </tr>

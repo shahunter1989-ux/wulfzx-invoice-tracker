@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { StatCard } from "../../components/StatCard";
-import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { requireOwner } from "../../lib/workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +21,14 @@ type Expense = {
 };
 
 export default async function DashboardPage() {
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
   const { data: invoices } = await supabase
     .from("invoices")
     .select("id,invoice_number,status,due_date,total_amount,customers(name),payments(amount)")
+    .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: false });
-  const { data: expenses } = await supabase.from("expenses").select("amount");
+  const { data: expenses } = await supabase.from("expenses").select("amount").eq("workspace_id", workspace.id);
 
   const invoiceRows = (invoices ?? []) as unknown as Invoice[];
   const expenseRows = (expenses ?? []) as unknown as Expense[];

@@ -1,6 +1,6 @@
 import { updateSettingsAction } from "../actions";
-import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults } from "../../lib/data";
+import { requireOwner } from "../../lib/workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +20,12 @@ type Settings = {
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
   const params = await searchParams;
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
   const { data } = await supabase
     .from("company_settings")
     .select("company_name,company_email,company_phone,company_address,default_currency,default_tax_rate,invoice_prefix")
-    .eq("user_id", user.id)
+    .eq("workspace_id", workspace.id)
     .single();
   const settings = data as Settings | null;
 

@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { requireWorkspace } from "../lib/workspace";
 
-export default function HomePage() {
-  redirect("/dashboard");
+export default async function HomePage() {
+  const context = await requireWorkspace();
+  redirect(context.isOwner ? "/dashboard" : "/submit");
 }

@@ -1,7 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { calculateBalanceDue, calculateInvoiceStatus } from "./calculations";
 
-const DEFAULT_EXPENSE_CATEGORIES = [
+export const DEFAULT_EXPENSE_CATEGORIES = [
   "Software",
   "Hosting",
   "Marketing",
@@ -21,20 +21,21 @@ type InvoiceStatusInput = {
   due_date?: string | null;
 };
 
-export async function ensureUserDefaults(supabase: SupabaseClient, user: User) {
+export async function ensureUserDefaults(supabase: SupabaseClient, user: User, workspaceId?: string) {
   await supabase.from("company_settings").upsert(
     {
       user_id: user.id,
+      ...(workspaceId ? { workspace_id: workspaceId } : {}),
       company_name: "Wulfzx.underground",
       default_currency: "USD",
       invoice_prefix: "WZX"
     },
-    { onConflict: "user_id", ignoreDuplicates: true }
+    { onConflict: workspaceId ? "workspace_id" : "user_id", ignoreDuplicates: true }
   );
 
   await supabase.from("expense_categories").upsert(
-    DEFAULT_EXPENSE_CATEGORIES.map((name) => ({ user_id: user.id, name })),
-    { onConflict: "user_id,name", ignoreDuplicates: true }
+    DEFAULT_EXPENSE_CATEGORIES.map((name) => ({ user_id: user.id, ...(workspaceId ? { workspace_id: workspaceId } : {}), name })),
+    { onConflict: workspaceId ? "workspace_id,name" : "user_id,name", ignoreDuplicates: true }
   );
 }
 

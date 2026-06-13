@@ -1,19 +1,31 @@
 import { signOutAction } from "../app/actions";
 import { getUserIfConfigured } from "../lib/auth";
+import { getWorkspaceIfConfigured } from "../lib/workspace";
 
-const links = [
+const ownerLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/customers", label: "Customers" },
   { href: "/invoices", label: "Invoices" },
   { href: "/payments", label: "Payments" },
   { href: "/receipts", label: "Receipts" },
   { href: "/reports", label: "Reports" },
+  { href: "/approvals", label: "Approvals" },
+  { href: "/team", label: "Team" },
+  { href: "/activity", label: "Activity" },
+  { href: "/exports", label: "Exports" },
   { href: "/offline", label: "Offline Sync" },
   { href: "/settings", label: "Settings" }
 ];
 
+const submitterLinks = [
+  { href: "/submit", label: "Submit Work" },
+  { href: "/offline", label: "Offline Sync" }
+];
+
 export async function Sidebar() {
   const { user } = await getUserIfConfigured();
+  const workspace = user ? await getWorkspaceIfConfigured() : null;
+  const links = user ? (workspace?.isSubmitter ? submitterLinks : ownerLinks) : [];
 
   return (
     <aside style={{ borderRight: "1px solid var(--border)", padding: 24, background: "var(--surface)" }}>
@@ -25,6 +37,11 @@ export async function Sidebar() {
             {link.label}
           </a>
         ))}
+        {!user ? (
+          <a href="/login" style={{ padding: "10px 12px", borderRadius: 10, background: "var(--surface-2)" }}>
+            Login
+          </a>
+        ) : null}
       </nav>
       {user ? (
         <form action={signOutAction} style={{ marginTop: 32 }}>

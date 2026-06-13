@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "../../../../lib/auth";
 import { ensureUserDefaults } from "../../../../lib/data";
+import { requireOwner } from "../../../../lib/workspace";
 import { updateExpenseAction } from "../../../actions";
 
 export const dynamic = "force-dynamic";
@@ -30,12 +30,12 @@ type Expense = {
 export default async function EditExpensePage({ params, searchParams }: EditExpensePageProps) {
   const { id } = await params;
   const query = await searchParams;
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
 
   const [{ data: categories }, { data: expense }] = await Promise.all([
-    supabase.from("expense_categories").select("id,name").order("name"),
-    supabase.from("expenses").select("id,category_id,vendor,expense_date,amount,payment_method,receipt_url,notes").eq("id", id).eq("user_id", user.id).single()
+    supabase.from("expense_categories").select("id,name").eq("workspace_id", workspace.id).order("name"),
+    supabase.from("expenses").select("id,category_id,vendor,expense_date,amount,payment_method,receipt_url,notes").eq("id", id).eq("workspace_id", workspace.id).single()
   ]);
 
   if (!expense) notFound();

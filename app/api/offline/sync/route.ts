@@ -2,8 +2,9 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import type { InvoiceStatus } from "../../../../lib/types";
 import { calculateInvoiceTotal, calculateLineTotal, calculateSubtotal } from "../../../../lib/calculations";
-import { requireUser } from "../../../../lib/auth";
 import { ensureUserDefaults, updateInvoiceStatus } from "../../../../lib/data";
+import { logAuditEvent } from "../../../../lib/audit";
+import { requireWorkspace, type WorkspaceContext } from "../../../../lib/workspace";
 
 type DraftType = "customer" | "invoice" | "payment" | "expense";
 type DraftPayload = Record<string, string | string[]>;
@@ -25,11 +26,14 @@ type InvoiceDraftItem = {
   unitPrice: number;
 };
 
-const REVALIDATE_PATHS = ["/dashboard", "/customers", "/invoices", "/payments", "/receipts", "/reports"];
+const OWNER_REVALIDATE_PATHS = ["/dashboard", "/customers", "/invoices", "/payments", "/receipts", "/reports"];
 
 export async function POST(request: Request) {
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const context = await requireWorkspace();
+  const { supabase, user, workspace } = context;
+  if (context.isOwner) {
+    await ensureUserDefaults(supabase, user, workspace.id);
+  }
 
   const body = (await request.json().catch(() => null)) as { drafts?: SyncDraft[] } | null;
   const drafts = Array.isArray(body?.drafts) ? body.drafts : [];
@@ -47,14 +51,16 @@ export async function POST(request: Request) {
         throw new Error("Draft is missing required sync data.");
       }
 
-      if (draft.type === "customer") {
-        await syncCustomerDraft(supabase, user.id, draft.payload);
+      if (context.isSubmitter) {
+        await syncSubmitterDraft(context, draft);
+      } else if (draft.type === "customer") {
+        await syncCustomerDraft(context, draft.payload);
       } else if (draft.type === "invoice") {
-        await syncInvoiceDraft(supabase, user.id, draft.payload);
+        await syncInvoiceDraft(context, draft.payload);
       } else if (draft.type === "payment") {
-        await syncPaymentDraft(supabase, user.id, draft.payload);
+        await syncPaymentDraft(context, draft.payload);
       } else if (draft.type === "expense") {
-        await syncExpenseDraft(supabase, user.id, draft.payload);
+        await syncExpenseDraft(context, draft.payload);
       } else {
         throw new Error("Unsupported draft type.");
       }
@@ -71,26 +77,25 @@ export async function POST(request: Request) {
   }
 
   if (changed) {
-    REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
+    if (context.isOwner) {
+      OWNER_REVALIDATE_PATHS.forEach((path) => revalidatePath(path));
+    } else {
+      revalidatePath("/submit");
+    }
+    revalidatePath("/offline");
   }
 
   return NextResponse.json({ results });
 }
 
-async function syncCustomerDraft(supabase: Awaited<ReturnType<typeof requireUser>>["supabase"], userId: string, payload: DraftPayload) {
-  const name = getText(payload, "name");
-  if (!name) {
-    throw new Error("Customer name is required.");
-  }
-
-  const { error } = await supabase.from("customers").insert({
-    user_id: userId,
-    name,
-    contact_name: getText(payload, "contact_name") || null,
-    email: getText(payload, "email") || null,
-    phone: getText(payload, "phone") || null,
-    address: getText(payload, "address") || null,
-    notes: getText(payload, "notes") || null
+async function syncSubmitterDraft(context: WorkspaceContext, draft: SyncDraft) {
+  const { supabase, user, workspace } = context;
+  const { error } = await supabase.from("submission_queue").insert({
+    workspace_id: workspace.id,
+    submitted_by: user.id,
+    submission_type: draft.type,
+    payload: draft.payload,
+    status: "pending"
   });
 
   if (error) {
@@ -98,7 +103,37 @@ async function syncCustomerDraft(supabase: Awaited<ReturnType<typeof requireUser
   }
 }
 
-async function syncInvoiceDraft(supabase: Awaited<ReturnType<typeof requireUser>>["supabase"], userId: string, payload: DraftPayload) {
+async function syncCustomerDraft(context: WorkspaceContext, payload: DraftPayload) {
+  const { supabase, user, workspace } = context;
+  const name = getText(payload, "name");
+  if (!name) {
+    throw new Error("Customer name is required.");
+  }
+
+  const { data, error } = await supabase
+    .from("customers")
+    .insert({
+      user_id: user.id,
+      workspace_id: workspace.id,
+      name,
+      contact_name: getText(payload, "contact_name") || null,
+      email: getText(payload, "email") || null,
+      phone: getText(payload, "phone") || null,
+      address: getText(payload, "address") || null,
+      notes: getText(payload, "notes") || null
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message || "Could not save customer.");
+  }
+
+  await logAuditEvent(supabase, { workspaceId: workspace.id, actorId: user.id, action: "offline_sync", entityType: "customer", entityId: data.id });
+}
+
+async function syncInvoiceDraft(context: WorkspaceContext, payload: DraftPayload) {
+  const { supabase, user, workspace } = context;
   const customerId = getText(payload, "customer_id");
   const issueDate = getText(payload, "issue_date") || new Date().toISOString().slice(0, 10);
   const dueDate = getText(payload, "due_date") || null;
@@ -108,10 +143,11 @@ async function syncInvoiceDraft(supabase: Awaited<ReturnType<typeof requireUser>
     throw new Error("Customer and at least one invoice line item are required.");
   }
 
-  const { data: settings } = await supabase.from("company_settings").select("invoice_prefix").eq("user_id", userId).maybeSingle();
+  const { data: settings } = await supabase.from("company_settings").select("invoice_prefix").eq("workspace_id", workspace.id).maybeSingle();
   const prefix = settings?.invoice_prefix || "WZX";
   const year = new Date(`${issueDate}T00:00:00`).getFullYear();
-  const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_invoice_number", {
+  const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_workspace_invoice_number", {
+    p_workspace_id: workspace.id,
     p_prefix: prefix,
     p_year: year
   });
@@ -128,7 +164,8 @@ async function syncInvoiceDraft(supabase: Awaited<ReturnType<typeof requireUser>
   const { data: invoice, error: invoiceError } = await supabase
     .from("invoices")
     .insert({
-      user_id: userId,
+      user_id: user.id,
+      workspace_id: workspace.id,
       customer_id: customerId,
       invoice_number: invoiceNumber,
       status: "draft" satisfies InvoiceStatus,
@@ -150,7 +187,8 @@ async function syncInvoiceDraft(supabase: Awaited<ReturnType<typeof requireUser>
 
   const { error: itemsError } = await supabase.from("invoice_items").insert(
     items.map((item) => ({
-      user_id: userId,
+      user_id: user.id,
+      workspace_id: workspace.id,
       invoice_id: invoice.id,
       description: item.description,
       quantity: item.quantity,
@@ -160,12 +198,15 @@ async function syncInvoiceDraft(supabase: Awaited<ReturnType<typeof requireUser>
   );
 
   if (itemsError) {
-    await supabase.from("invoices").delete().eq("id", invoice.id).eq("user_id", userId);
+    await supabase.from("invoices").delete().eq("id", invoice.id).eq("workspace_id", workspace.id);
     throw new Error(itemsError.message);
   }
+
+  await logAuditEvent(supabase, { workspaceId: workspace.id, actorId: user.id, action: "offline_sync", entityType: "invoice", entityId: invoice.id, metadata: { invoiceNumber } });
 }
 
-async function syncPaymentDraft(supabase: Awaited<ReturnType<typeof requireUser>>["supabase"], userId: string, payload: DraftPayload) {
+async function syncPaymentDraft(context: WorkspaceContext, payload: DraftPayload) {
+  const { supabase, user, workspace } = context;
   const invoiceId = getText(payload, "invoice_id");
   const amount = getMoney(payload, "amount");
 
@@ -173,46 +214,82 @@ async function syncPaymentDraft(supabase: Awaited<ReturnType<typeof requireUser>
     throw new Error("Invoice and payment amount are required.");
   }
 
-  const { error } = await supabase.from("payments").insert({
-    user_id: userId,
-    invoice_id: invoiceId,
-    payment_date: getText(payload, "payment_date") || new Date().toISOString().slice(0, 10),
-    amount,
-    payment_method: getText(payload, "payment_method") || "other",
-    reference_number: getText(payload, "reference_number") || null,
-    notes: getText(payload, "notes") || null
-  });
+  const { data, error } = await supabase
+    .from("payments")
+    .insert({
+      user_id: user.id,
+      workspace_id: workspace.id,
+      invoice_id: invoiceId,
+      payment_date: getText(payload, "payment_date") || new Date().toISOString().slice(0, 10),
+      amount,
+      payment_method: getText(payload, "payment_method") || "other",
+      reference_number: getText(payload, "reference_number") || null,
+      notes: getText(payload, "notes") || null
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    throw new Error(error.message);
+  if (error || !data) {
+    throw new Error(error?.message || "Could not save payment.");
   }
 
-  const { data: invoice } = await supabase.from("invoices").select("id,status,total_amount,due_date").eq("id", invoiceId).eq("user_id", userId).single();
+  const { data: invoice } = await supabase.from("invoices").select("id,status,total_amount,due_date").eq("id", invoiceId).eq("workspace_id", workspace.id).single();
   if (invoice) {
     await updateInvoiceStatus(supabase, invoice);
   }
+
+  await logAuditEvent(supabase, { workspaceId: workspace.id, actorId: user.id, action: "offline_sync", entityType: "payment", entityId: data.id, metadata: { invoiceId, amount } });
 }
 
-async function syncExpenseDraft(supabase: Awaited<ReturnType<typeof requireUser>>["supabase"], userId: string, payload: DraftPayload) {
+async function syncExpenseDraft(context: WorkspaceContext, payload: DraftPayload) {
+  const { supabase, user, workspace } = context;
   const amount = getMoney(payload, "amount");
   if (amount <= 0) {
     throw new Error("Expense amount is required.");
   }
 
-  const { error } = await supabase.from("expenses").insert({
-    user_id: userId,
-    category_id: getText(payload, "category_id") || null,
-    vendor: getText(payload, "vendor") || null,
-    expense_date: getText(payload, "expense_date") || new Date().toISOString().slice(0, 10),
-    amount,
-    payment_method: getText(payload, "payment_method") || "other",
-    receipt_url: getText(payload, "receipt_url") || null,
-    notes: getText(payload, "notes") || null
-  });
+  const categoryId = await resolveExpenseCategoryId(context, payload);
+  const { data, error } = await supabase
+    .from("expenses")
+    .insert({
+      user_id: user.id,
+      workspace_id: workspace.id,
+      category_id: categoryId,
+      vendor: getText(payload, "vendor") || null,
+      expense_date: getText(payload, "expense_date") || new Date().toISOString().slice(0, 10),
+      amount,
+      payment_method: getText(payload, "payment_method") || "other",
+      receipt_url: getText(payload, "receipt_url") || null,
+      notes: getText(payload, "notes") || null
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    throw new Error(error.message);
+  if (error || !data) {
+    throw new Error(error?.message || "Could not save expense.");
   }
+
+  await logAuditEvent(supabase, { workspaceId: workspace.id, actorId: user.id, action: "offline_sync", entityType: "expense", entityId: data.id, metadata: { amount } });
+}
+
+async function resolveExpenseCategoryId(context: WorkspaceContext, payload: DraftPayload): Promise<string | null> {
+  const existingCategoryId = getText(payload, "category_id");
+  if (existingCategoryId) return existingCategoryId;
+
+  const categoryName = getText(payload, "category_name");
+  if (!categoryName) return null;
+
+  const { supabase, user, workspace } = context;
+  const { data: existing } = await supabase.from("expense_categories").select("id").eq("workspace_id", workspace.id).eq("name", categoryName).maybeSingle();
+  if (existing?.id) return existing.id;
+
+  const { data, error } = await supabase
+    .from("expense_categories")
+    .insert({ user_id: user.id, workspace_id: workspace.id, name: categoryName })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(error?.message || "Could not create expense category.");
+  return data.id;
 }
 
 function buildInvoiceItems(payload: DraftPayload): InvoiceDraftItem[] {

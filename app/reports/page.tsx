@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
 import { StatCard } from "../../components/StatCard";
-import { requireUser } from "../../lib/auth";
 import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
+import { requireOwner } from "../../lib/workspace";
 import { deleteInvoiceAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -36,14 +36,18 @@ type Expense = {
 
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const params = await searchParams;
-  const { supabase, user } = await requireUser();
-  await ensureUserDefaults(supabase, user);
+  const { supabase, user, workspace } = await requireOwner();
+  await ensureUserDefaults(supabase, user, workspace.id);
   const monthStart = new Date();
   monthStart.setDate(1);
   const monthStartText = monthStart.toISOString().slice(0, 10);
-  const { data: invoices } = await supabase.from("invoices").select("id,invoice_number,status,issue_date,due_date,total_amount,customers(name),payments(amount)").order("issue_date", { ascending: false });
-  const { data: payments } = await supabase.from("payments").select("amount,payment_date").gte("payment_date", monthStartText);
-  const { data: expenses } = await supabase.from("expenses").select("amount,expense_date,expense_categories(name)").gte("expense_date", monthStartText);
+  const { data: invoices } = await supabase
+    .from("invoices")
+    .select("id,invoice_number,status,issue_date,due_date,total_amount,customers(name),payments(amount)")
+    .eq("workspace_id", workspace.id)
+    .order("issue_date", { ascending: false });
+  const { data: payments } = await supabase.from("payments").select("amount,payment_date").eq("workspace_id", workspace.id).gte("payment_date", monthStartText);
+  const { data: expenses } = await supabase.from("expenses").select("amount,expense_date,expense_categories(name)").eq("workspace_id", workspace.id).gte("expense_date", monthStartText);
 
   const invoiceRows = (invoices ?? []) as unknown as Invoice[];
   const paymentRows = (payments ?? []) as unknown as Payment[];

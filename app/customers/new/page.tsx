@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { OfflineForm } from "../../../components/OfflineForm";
+import { requireOwner } from "../../../lib/workspace";
 import { createCustomerAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ type NewCustomerPageProps = {
 
 export default async function NewCustomerPage({ searchParams }: NewCustomerPageProps) {
   const params = await searchParams;
+  await requireOwner();
 
   return (
     <section className="card narrow-card">
