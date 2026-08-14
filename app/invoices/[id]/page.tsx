@@ -95,7 +95,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
         <article className="invoice-document">
           <header className="invoice-doc-header">
             <div>
-              <h2>Wulfzx.underground</h2>
+              <h2>WULFZX.UNDERGROUND</h2>
               <p>AI company</p>
             </div>
             <div className="invoice-meta">

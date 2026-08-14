@@ -67,7 +67,7 @@ export async function GET(_request: Request, context: RouteContext) {
     return `$${Number(value ?? 0).toFixed(2)}`;
   }
 
-  draw("Wulfzx.underground", margin, 18, true);
+  draw("WULFZX.UNDERGROUND", margin, 18, true);
   y -= 22;
   draw("AI company", margin, 10);
   y = 742;
