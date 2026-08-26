@@ -4,8 +4,8 @@ import { OfflineStatus } from "../components/OfflineStatus";
 import { Sidebar } from "../components/Sidebar";
 
 export const metadata: Metadata = {
-  title: "WCHU Invoice Tracker",
-  description: "Private invoice and receipt tracker for WCHU"
+  title: "WZXU Invoice Tracker",
+  description: "Private invoice and receipt tracker for WZXU"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

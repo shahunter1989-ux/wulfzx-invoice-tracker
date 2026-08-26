@@ -28,9 +28,9 @@ export async function ensureUserDefaults(supabase: SupabaseClient, user: User, w
     {
       user_id: user.id,
       ...(workspaceId ? { workspace_id: workspaceId } : {}),
-      company_name: "WCHU",
+      company_name: "WZXU",
       default_currency: "USD",
-      invoice_prefix: "WCHU",
+      invoice_prefix: "WZXU",
       invoice_template: DEFAULT_INVOICE_TEMPLATE
     },
     { onConflict: workspaceId ? "workspace_id" : "user_id", ignoreDuplicates: true }

@@ -1,12 +1,12 @@
-# WCHU Invoice Tracker
+# WZXU Invoice Tracker
 
-A private internal invoice, payment, receipt, and sales-tracking web app for **WCHU**.
+A private internal invoice, payment, receipt, and sales-tracking web app for **WZXU**.
 
 This repository is intended to become a private GitHub project. The app is designed for one owner/user first, with room to expand later.
 
 ## Core Goal
 
-Track the financial flow of WCHU:
+Track the financial flow of WZXU:
 
 - Customers / clients
 - Sales invoices
@@ -22,14 +22,14 @@ Track the financial flow of WCHU:
 - **Authentication:** Supabase Auth
 - **Hosting:** Vercel
 - **Code storage:** Private GitHub repository
-- **Invoice prefix:** `WCHU`
+- **Invoice prefix:** `WZXU`
 
 ## Brand Defaults
 
 ```txt
-Company name: WCHU
-Invoice prefix: WCHU
-Example invoice number: WCHU-2026-0001
+Company name: WZXU
+Invoice prefix: WZXU
+Example invoice number: WZXU-2026-0001
 Default currency: USD
 ```
 

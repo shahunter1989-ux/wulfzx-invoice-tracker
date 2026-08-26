@@ -167,7 +167,7 @@ export async function createInvoiceAction(formData: FormData) {
   }
 
   const { data: settings } = await supabase.from("company_settings").select("invoice_prefix,invoice_template").eq("workspace_id", workspace.id).maybeSingle();
-  const prefix = settings?.invoice_prefix || "WCHU";
+  const prefix = settings?.invoice_prefix || "WZXU";
   const invoiceTemplate = normalizeInvoiceTemplate(toText(formData.get("invoice_template")) || settings?.invoice_template || DEFAULT_INVOICE_TEMPLATE);
   const year = new Date(`${issueDate}T00:00:00`).getFullYear();
   const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_workspace_invoice_number", {
@@ -319,7 +319,7 @@ export async function duplicateInvoiceAction(formData: FormData) {
 
   const issueDate = new Date().toISOString().slice(0, 10);
   const { data: settings } = await supabase.from("company_settings").select("invoice_prefix").eq("workspace_id", workspace.id).maybeSingle();
-  const prefix = settings?.invoice_prefix || "WCHU";
+  const prefix = settings?.invoice_prefix || "WZXU";
   const year = new Date(`${issueDate}T00:00:00`).getFullYear();
   const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_workspace_invoice_number", {
     p_workspace_id: workspace.id,
@@ -546,13 +546,13 @@ export async function updateSettingsAction(formData: FormData) {
     {
       user_id: user.id,
       workspace_id: workspace.id,
-      company_name: toText(formData.get("company_name")) || "WCHU",
+      company_name: toText(formData.get("company_name")) || "WZXU",
       company_email: toText(formData.get("company_email")) || null,
       company_phone: toText(formData.get("company_phone")) || null,
       company_address: toText(formData.get("company_address")) || null,
       default_currency: toText(formData.get("default_currency")) || "USD",
       default_tax_rate: toMoney(formData.get("default_tax_rate")),
-      invoice_prefix: toText(formData.get("invoice_prefix")) || "WCHU",
+      invoice_prefix: toText(formData.get("invoice_prefix")) || "WZXU",
       invoice_template: normalizeInvoiceTemplate(toText(formData.get("invoice_template")) || DEFAULT_INVOICE_TEMPLATE)
     },
     { onConflict: "workspace_id" }
@@ -826,7 +826,7 @@ async function approveSubmissionPayload(params: {
     if (!customerId || items.length === 0) throw new Error("Customer and at least one line item are required.");
 
     const { data: settings } = await supabase.from("company_settings").select("invoice_prefix,invoice_template").eq("workspace_id", workspace.id).maybeSingle();
-    const prefix = settings?.invoice_prefix || "WCHU";
+    const prefix = settings?.invoice_prefix || "WZXU";
     const invoiceTemplate = normalizeInvoiceTemplate(getPayloadText(payload, "invoice_template") || settings?.invoice_template || DEFAULT_INVOICE_TEMPLATE);
     const year = new Date(`${issueDate}T00:00:00`).getFullYear();
     const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_workspace_invoice_number", {

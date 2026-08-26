@@ -19,8 +19,8 @@
 
 ## Company Settings
 
-- [ ] Add company name: WCHU
-- [ ] Add invoice prefix: WCHU
+- [ ] Add company name: WZXU
+- [ ] Add invoice prefix: WZXU
 - [ ] Add default currency
 - [ ] Add default tax rate
 - [ ] Add business contact info

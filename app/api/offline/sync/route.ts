@@ -145,7 +145,7 @@ async function syncInvoiceDraft(context: WorkspaceContext, payload: DraftPayload
   }
 
   const { data: settings } = await supabase.from("company_settings").select("invoice_prefix,invoice_template").eq("workspace_id", workspace.id).maybeSingle();
-  const prefix = settings?.invoice_prefix || "WCHU";
+  const prefix = settings?.invoice_prefix || "WZXU";
   const invoiceTemplate = normalizeInvoiceTemplate(getText(payload, "invoice_template") || settings?.invoice_template || DEFAULT_INVOICE_TEMPLATE);
   const year = new Date(`${issueDate}T00:00:00`).getFullYear();
   const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_workspace_invoice_number", {

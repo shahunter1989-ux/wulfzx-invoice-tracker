@@ -1,11 +1,11 @@
--- WCHU submit-only staff access migration
+-- WZXU submit-only staff access migration
 -- Run this once in Supabase SQL Editor before deploying the team-access app.
 
 create extension if not exists "uuid-ossp";
 
 create table if not exists public.workspaces (
   id uuid primary key default uuid_generate_v4(),
-  name text not null default 'WCHU',
+  name text not null default 'WZXU',
   owner_id uuid not null references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -91,7 +91,7 @@ preferred_settings as (
   order by user_id, updated_at desc
 )
 insert into public.workspaces (owner_id, name)
-select source_users.user_id, coalesce(nullif(preferred_settings.company_name, ''), 'WCHU')
+select source_users.user_id, coalesce(nullif(preferred_settings.company_name, ''), 'WZXU')
 from source_users
 left join preferred_settings on preferred_settings.user_id = source_users.user_id
 where source_users.user_id is not null

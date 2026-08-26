@@ -33,7 +33,7 @@ export default async function NewInvoicePage({ searchParams }: NewInvoicePagePro
       <div className="page-header">
         <div>
           <h1>New Invoice</h1>
-          <p className="muted">Create WCHU invoices using automatic WCHU numbering.</p>
+          <p className="muted">Create WZXU invoices using automatic WZXU numbering.</p>
         </div>
         <Link className="secondary-link" href="/invoices">
           Back to invoices

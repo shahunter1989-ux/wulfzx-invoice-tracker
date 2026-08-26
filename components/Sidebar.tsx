@@ -29,7 +29,7 @@ export async function Sidebar() {
 
   return (
     <aside style={{ borderRight: "1px solid var(--border)", padding: 24, background: "var(--surface)" }}>
-      <h2 style={{ marginTop: 0 }}>WCHU</h2>
+      <h2 style={{ marginTop: 0 }}>WZXU</h2>
       <p className="muted">Invoice Tracker</p>
       <nav style={{ display: "grid", gap: 12, marginTop: 32 }}>
         {links.map((link) => (

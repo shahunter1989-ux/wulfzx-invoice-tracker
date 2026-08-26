@@ -23,8 +23,8 @@ export const INVOICE_TEMPLATES = [
   },
   {
     id: "wulfzx_blueprint",
-    name: "WCHU Blueprint",
-    description: "Legacy boxed blue/yellow WCHU layout."
+    name: "WZXU Blueprint",
+    description: "Legacy boxed blue/yellow WZXU layout."
   }
 ] as const;
 
