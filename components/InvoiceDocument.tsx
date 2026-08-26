@@ -59,7 +59,7 @@ export function InvoiceDocument({ detail, company }: InvoiceDocumentProps) {
     detail.ship_to_address || detail.customers?.address,
     detail.ship_to_contact || detail.customers?.contact_name || detail.customers?.email || detail.customers?.phone
   ].filter(Boolean);
-  const companyName = company?.company_name || "WULFZX.UNDERGROUND";
+  const companyName = company?.company_name || "WCHU";
   const companyLines = [company?.company_address, company?.company_phone ? `Phone: ${company.company_phone}` : null, company?.company_email ? `Email: ${company.company_email}` : null].filter(
     Boolean
   );
@@ -73,7 +73,7 @@ export function InvoiceDocument({ detail, company }: InvoiceDocumentProps) {
           <p className="invoice-brand">{companyName}</p>
         </div>
         <div className="invoice-template-badge">
-          <strong>WZX</strong>
+          <strong>WCHU</strong>
           <span>{detail.status.replace("_", " ")}</span>
         </div>
       </header>
@@ -154,7 +154,7 @@ export function InvoiceDocument({ detail, company }: InvoiceDocumentProps) {
 
       <footer className="invoice-template-footer">
         <span>Thank you for your business.</span>
-        <strong>WULFZX.UNDERGROUND</strong>
+        <strong>WCHU</strong>
       </footer>
     </article>
   );

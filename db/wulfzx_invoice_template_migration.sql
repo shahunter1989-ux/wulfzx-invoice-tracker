@@ -1,4 +1,4 @@
--- Wulfzx branded invoice template support.
+-- WCHU branded invoice template support.
 -- Safe to run more than once.
 
 alter table public.company_settings

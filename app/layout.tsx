@@ -4,8 +4,8 @@ import { OfflineStatus } from "../components/OfflineStatus";
 import { Sidebar } from "../components/Sidebar";
 
 export const metadata: Metadata = {
-  title: "Wulfzx.underground Invoice Tracker",
-  description: "Private invoice and receipt tracker for Wulfzx.underground"
+  title: "WCHU Invoice Tracker",
+  description: "Private invoice and receipt tracker for WCHU"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,12 +1,12 @@
-# Wulfzx.underground Invoice Tracker
+# WCHU Invoice Tracker
 
-A private internal invoice, payment, receipt, and sales-tracking web app for **Wulfzx.underground**.
+A private internal invoice, payment, receipt, and sales-tracking web app for **WCHU**.
 
 This repository is intended to become a private GitHub project. The app is designed for one owner/user first, with room to expand later.
 
 ## Core Goal
 
-Track the financial flow of Wulfzx.underground:
+Track the financial flow of WCHU:
 
 - Customers / clients
 - Sales invoices
@@ -22,14 +22,14 @@ Track the financial flow of Wulfzx.underground:
 - **Authentication:** Supabase Auth
 - **Hosting:** Vercel
 - **Code storage:** Private GitHub repository
-- **Invoice prefix:** `WZX`
+- **Invoice prefix:** `WCHU`
 
 ## Brand Defaults
 
 ```txt
-Company name: Wulfzx.underground
-Invoice prefix: WZX
-Example invoice number: WZX-2026-0001
+Company name: WCHU
+Invoice prefix: WCHU
+Example invoice number: WCHU-2026-0001
 Default currency: USD
 ```
 

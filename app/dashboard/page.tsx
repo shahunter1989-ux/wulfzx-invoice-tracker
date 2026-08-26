@@ -60,7 +60,7 @@ export default async function DashboardPage() {
       <div className="page-header">
         <div>
           <h1>Dashboard</h1>
-          <p className="muted">Overview of Wulfzx.underground sales, payments, and expenses.</p>
+          <p className="muted">Overview of WCHU sales, payments, and expenses.</p>
         </div>
         <div className="action-row">
           <Link className="primary-link" href="/customers/new">

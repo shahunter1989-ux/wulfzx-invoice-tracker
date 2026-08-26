@@ -150,18 +150,18 @@ function drawHero(page: PDFPage, bold: PDFFont, x: number, top: number, rightX: 
   drawText(page, "INVOICE", x + 18, top - 50, 54, bold, titleColor);
   page.drawRectangle({ x: x + 18, y: top - 68, width: 62, height: 5, color: theme.accent });
   page.drawRectangle({ x: x + 84, y: top - 67, width: 250, height: 3, color: titleColor });
-  drawText(page, "WULFZX.UNDERGROUND", rightX, top - 24, 18, bold, titleColor);
+  drawText(page, "WCHU", rightX, top - 24, 18, bold, titleColor);
   drawText(page, theme.subheading, rightX + 52, top - 44, 9, bold, theme.accent);
   page.drawEllipse({ x: rightX + rightWidth - 62, y: top - 57, xScale: 26, yScale: 26, borderColor: theme.accent, borderWidth: 5 });
-  drawText(page, "WZX", rightX + rightWidth - 79, top - 65, 14, bold, titleColor);
+  drawText(page, "WCHU", rightX + rightWidth - 83, top - 65, 14, bold, titleColor);
 }
 
 function drawCompanyPanel(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, y: number, width: number, settings: CompanySettings | null, theme: PdfTheme) {
   drawPanel(page, x, y, width, 96, theme);
   page.drawEllipse({ x: x + 66, y: y + 48, xScale: 32, yScale: 32, borderColor: theme.primary, borderWidth: 8 });
-  drawText(page, "WZX", x + 45, y + 40, 14, bold, theme.primary);
+  drawText(page, "WCHU", x + 40, y + 40, 14, bold, theme.primary);
   const lines = [
-    settings?.company_name || "WULFZX.UNDERGROUND",
+    settings?.company_name || "WCHU",
     settings?.company_address,
     settings?.company_phone ? `Phone: ${settings.company_phone}` : null,
     settings?.company_email ? `Email: ${settings.company_email}` : null
@@ -251,8 +251,8 @@ function drawTotalsPanel(page: PDFPage, font: PDFFont, bold: PDFFont, x: number,
 function drawFooter(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, width: number, theme: PdfTheme) {
   page.drawLine({ start: { x, y: 44 }, end: { x: x + width, y: 44 }, thickness: 1, color: theme.primary });
   drawText(page, theme.footer, x + 216, 28, 10, bold, theme.primary);
-  drawText(page, "WULFZX.UNDERGROUND", x + width - 136, 28, 8, bold, theme.primary);
-  drawText(page, "invoice by wulfzx.underground", x + width - 130, 14, 8, font, MUTED);
+  drawText(page, "WCHU", x + width - 48, 28, 8, bold, theme.primary);
+  drawText(page, "invoice by WCHU", x + width - 78, 14, 8, font, MUTED);
 }
 
 function drawPageBorder(page: PDFPage, margin: number, theme: PdfTheme) {
@@ -275,7 +275,7 @@ function getPdfTheme(value: string | null | undefined): PdfTheme {
     return { id, primary: GREEN, accent: GOLD, heading: "Web/App Studio", subheading: "WEB / APP STUDIO", footer: "PROJECT DELIVERED" };
   }
   if (id === "wulfzx_blueprint") {
-    return { id, primary: BLUE, accent: GOLD, heading: "Wulfzx Blueprint", subheading: "AI COMPANY", footer: "THANK YOU!" };
+    return { id, primary: BLUE, accent: GOLD, heading: "WCHU Blueprint", subheading: "AI COMPANY", footer: "THANK YOU!" };
   }
   return { id, primary: BLUE, accent: rgb(0.35, 0.51, 0.72), heading: "Professional Clean", subheading: "PROFESSIONAL SERVICES", footer: "THANK YOU" };
 }

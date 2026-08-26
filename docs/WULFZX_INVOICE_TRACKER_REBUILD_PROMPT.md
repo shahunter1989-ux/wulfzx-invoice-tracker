@@ -1,6 +1,6 @@
-# Wulfzx Invoice Tracker Rebuild Prompt
+# WCHU Invoice Tracker Rebuild Prompt
 
-Build a private business invoice tracker for WULFZX.UNDERGROUND. The app should prioritize the owner workflow first: customers, invoices, payments, expenses, reports, invoice PDFs, and fast daily use. Keep staff/team access as a secondary submit-only practice feature, not the primary workflow.
+Build a private business invoice tracker for WCHU. The app should prioritize the owner workflow first: customers, invoices, payments, expenses, reports, invoice PDFs, and fast daily use. Keep staff/team access as a secondary submit-only practice feature, not the primary workflow.
 
 ## Product Goal
 
@@ -13,7 +13,7 @@ Create a polished owner-only invoice and business tracking app for AI, websites,
 - Customer database with add, edit, search, detail view, and protected delete behavior.
 - Invoice creation with line items, discount, tax, shipping, deposit, Ship To, notes, terms, payment terms, automatic invoice numbering, and per-invoice template selection.
 - Invoice preview, print, and PDF download.
-- Multiple invoice templates: Professional Clean, Luxury Black Gold, AI Tech Grid, Web/App Studio, and Wulfzx Blueprint legacy.
+- Multiple invoice templates: Professional Clean, Luxury Black Gold, AI Tech Grid, Web/App Studio, and WCHU Blueprint legacy.
 - Payment recording against invoices, including partial payments.
 - Expense and receipt tracking with vendor, category, method, receipt URL, notes, edit, delete, and filters.
 - Dashboard with unpaid balance, overdue invoices, paid this month, expenses this month, estimated net, pending approvals, and attention items.
@@ -41,10 +41,10 @@ Create a polished owner-only invoice and business tracking app for AI, websites,
 
 ## Design Direction
 
-- Main app shell: dark Wulfzx style with subtle blue/tech branding.
+- Main app shell: dark WCHU style with subtle blue/tech branding.
 - Work screens should be dense, clean, and practical rather than marketing-style.
 - Invoice PDFs should be white or print-friendly, customer-facing, and readable.
-- Keep WULFZX.UNDERGROUND branding uppercase on customer-facing invoice outputs.
+- Keep WCHU branding uppercase on customer-facing invoice outputs.
 
 ## Future Improvements
 

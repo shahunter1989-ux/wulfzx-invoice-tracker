@@ -19,8 +19,8 @@
 
 ## Company Settings
 
-- [ ] Add company name: Wulfzx.underground
-- [ ] Add invoice prefix: WZX
+- [ ] Add company name: WCHU
+- [ ] Add invoice prefix: WCHU
 - [ ] Add default currency
 - [ ] Add default tax rate
 - [ ] Add business contact info

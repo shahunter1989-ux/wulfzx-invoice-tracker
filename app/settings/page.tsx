@@ -35,18 +35,18 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   return (
     <section className="card narrow-card">
       <h1>Settings</h1>
-      <p className="muted">Company settings for Wulfzx.underground.</p>
+      <p className="muted">Company settings for WCHU.</p>
       {params.error ? <div className="notice error">{params.error}</div> : null}
       {params.saved ? <div className="notice success">Settings saved.</div> : null}
       <InvoiceTemplatePreviewGrid />
       <form action={updateSettingsAction} className="grid form-grid">
         <label>
           Company name
-          <input name="company_name" defaultValue={settings?.company_name || "Wulfzx.underground"} required />
+          <input name="company_name" defaultValue={settings?.company_name || "WCHU"} required />
         </label>
         <label>
           Invoice prefix
-          <input name="invoice_prefix" defaultValue={settings?.invoice_prefix || "WZX"} required />
+          <input name="invoice_prefix" defaultValue={settings?.invoice_prefix || "WCHU"} required />
         </label>
         <InvoiceTemplateSelect defaultValue={settings?.invoice_template} label="Default invoice template" />
         <label>

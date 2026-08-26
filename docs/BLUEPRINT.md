@@ -1,8 +1,8 @@
-# Wulfzx.underground Invoice Tracker Blueprint
+# WCHU Invoice Tracker Blueprint
 
 ## Purpose
 
-The app is a private business dashboard for tracking what Wulfzx.underground sells, what clients owe, what has been paid, and what expenses or receipts need to be recorded.
+The app is a private business dashboard for tracking what WCHU sells, what clients owe, what has been paid, and what expenses or receipts need to be recorded.
 
 ## Main Sections
 
@@ -137,7 +137,7 @@ Starter categories:
 
 Reports should answer:
 
-- How much did Wulfzx.underground sell this month?
+- How much did WCHU sell this month?
 - How much money was actually received?
 - Which invoices are still unpaid?
 - Which invoices are overdue?

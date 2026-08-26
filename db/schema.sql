@@ -1,4 +1,4 @@
--- Wulfzx.underground Invoice Tracker
+-- WCHU Invoice Tracker
 -- Supabase / Postgres starter schema
 
 create extension if not exists "uuid-ossp";
@@ -25,25 +25,25 @@ create table if not exists public.profiles (
 create table if not exists public.company_settings (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  company_name text not null default 'Wulfzx.underground',
+  company_name text not null default 'WCHU',
   company_email text,
   company_phone text,
   company_address text,
   logo_url text,
   default_currency text not null default 'USD',
   default_tax_rate numeric(10, 4) not null default 0,
-  invoice_prefix text not null default 'WZX',
+  invoice_prefix text not null default 'WCHU',
   invoice_template text not null default 'professional_clean',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique(user_id)
 );
 
--- Per-user invoice sequence, used for safe automatic WZX-YYYY-0001 numbers.
+-- Per-user invoice sequence, used for safe automatic WCHU-YYYY-0001 numbers.
 create table if not exists public.invoice_sequences (
   user_id uuid not null references auth.users(id) on delete cascade,
   invoice_year integer not null,
-  prefix text not null default 'WZX',
+  prefix text not null default 'WCHU',
   last_sequence integer not null default 0,
   updated_at timestamptz not null default now(),
   primary key (user_id, invoice_year, prefix)
