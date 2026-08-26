@@ -18,6 +18,7 @@ type InvoiceStatusInput = {
   id: string;
   status?: string | null;
   total_amount: number | string | null;
+  deposit_amount?: number | string | null;
   due_date?: string | null;
 };
 
@@ -28,7 +29,8 @@ export async function ensureUserDefaults(supabase: SupabaseClient, user: User, w
       ...(workspaceId ? { workspace_id: workspaceId } : {}),
       company_name: "Wulfzx.underground",
       default_currency: "USD",
-      invoice_prefix: "WZX"
+      invoice_prefix: "WZX",
+      invoice_template: "wulfzx_blueprint"
     },
     { onConflict: workspaceId ? "workspace_id" : "user_id", ignoreDuplicates: true }
   );
@@ -43,13 +45,13 @@ export function sumPayments(payments: PaymentRow[] | null | undefined): number {
   return roundMoney((payments ?? []).reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0));
 }
 
-export function invoiceBalance(invoice: { total_amount: number | string | null; payments?: PaymentRow[] | null }): number {
-  return calculateBalanceDue(Number(invoice.total_amount ?? 0), sumPayments(invoice.payments));
+export function invoiceBalance(invoice: { total_amount: number | string | null; deposit_amount?: number | string | null; payments?: PaymentRow[] | null }): number {
+  return calculateBalanceDue(Number(invoice.total_amount ?? 0), Number(invoice.deposit_amount ?? 0) + sumPayments(invoice.payments));
 }
 
 export async function updateInvoiceStatus(supabase: SupabaseClient, invoice: InvoiceStatusInput) {
   const { data: payments } = await supabase.from("payments").select("amount").eq("invoice_id", invoice.id);
-  const amountReceived = sumPayments(payments);
+  const amountReceived = Number(invoice.deposit_amount ?? 0) + sumPayments(payments);
   const status = calculateInvoiceStatus({
     currentStatus: invoice.status === "cancelled" ? "cancelled" : undefined,
     totalAmount: Number(invoice.total_amount ?? 0),

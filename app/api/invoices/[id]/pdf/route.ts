@@ -1,5 +1,6 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { formatDate } from "../../../../../lib/format";
+import { invoiceBalance, sumPayments } from "../../../../../lib/data";
 import { logAuditEvent } from "../../../../../lib/audit";
 import { requireOwner } from "../../../../../lib/workspace";
 
@@ -17,7 +18,13 @@ type Invoice = {
   subtotal: number | string;
   discount_amount: number | string;
   tax_amount: number | string;
+  shipping_amount: number | string;
+  deposit_amount: number | string;
   total_amount: number | string;
+  ship_to_name: string | null;
+  ship_to_address: string | null;
+  ship_to_contact: string | null;
+  payment_terms: string | null;
   notes: string | null;
   terms: string | null;
   customers: {
@@ -33,122 +40,77 @@ type Invoice = {
     unit_price: number | string;
     line_total: number | string;
   }[];
+  payments: {
+    amount: number | string | null;
+  }[];
 };
+
+type CompanySettings = {
+  company_name: string | null;
+  company_email: string | null;
+  company_phone: string | null;
+  company_address: string | null;
+};
+
+const BLUE = rgb(0.04, 0.22, 0.45);
+const GOLD = rgb(0.96, 0.69, 0.08);
+const INK = rgb(0.08, 0.09, 0.12);
+const MUTED = rgb(0.38, 0.43, 0.5);
+const LIGHT_LINE = rgb(0.72, 0.78, 0.84);
 
 export async function GET(_request: Request, context: RouteContext) {
   const { id } = await context.params;
   const { supabase, user, workspace } = await requireOwner();
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select(
-      "invoice_number,status,issue_date,due_date,subtotal,discount_amount,tax_amount,total_amount,notes,terms,customers(name,contact_name,email,phone,address),invoice_items(description,quantity,unit_price,line_total)"
-    )
-    .eq("id", id)
-    .eq("workspace_id", workspace.id)
-    .single();
+  const [{ data: invoice }, { data: settings }] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select(
+        "invoice_number,status,issue_date,due_date,subtotal,discount_amount,tax_amount,shipping_amount,deposit_amount,total_amount,ship_to_name,ship_to_address,ship_to_contact,payment_terms,notes,terms,customers(name,contact_name,email,phone,address),invoice_items(description,quantity,unit_price,line_total),payments(amount)"
+      )
+      .eq("id", id)
+      .eq("workspace_id", workspace.id)
+      .single(),
+    supabase.from("company_settings").select("company_name,company_email,company_phone,company_address").eq("workspace_id", workspace.id).maybeSingle()
+  ]);
 
   if (!invoice) {
     return new Response("Invoice not found", { status: 404 });
   }
 
   const detail = invoice as unknown as Invoice;
+  const company = settings as CompanySettings | null;
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([612, 792]);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const margin = 48;
-  let y = 742;
+  const margin = 28;
+  const pageTop = 762;
+  const pageWidth = 612;
+  const contentWidth = pageWidth - margin * 2;
+  const leftWidth = 304;
+  const rightWidth = contentWidth - leftWidth - 18;
+  const rightX = margin + leftWidth + 18;
 
-  function draw(text: string, x: number, size = 10, useBold = false) {
-    page.drawText(text, { x, y, size, font: useBold ? bold : font, color: rgb(0.08, 0.08, 0.1) });
-  }
-
-  function money(value: number | string) {
-    return `$${Number(value ?? 0).toFixed(2)}`;
-  }
-
-  draw("WULFZX.UNDERGROUND", margin, 18, true);
-  y -= 22;
-  draw("AI company", margin, 10);
-  y = 742;
-  draw("INVOICE", 430, 18, true);
-  y -= 22;
-  draw(detail.invoice_number, 430, 11);
-  y -= 16;
-  draw(detail.status.replace("_", " ").toUpperCase(), 430, 9, true);
-
-  y = 670;
-  draw("Bill To", margin, 10, true);
-  y -= 18;
-  draw(detail.customers?.name || "No customer", margin, 12, true);
-  for (const line of [detail.customers?.contact_name, detail.customers?.email, detail.customers?.phone, detail.customers?.address].filter(Boolean)) {
-    y -= 15;
-    draw(String(line), margin, 10);
-  }
-
-  y = 670;
-  draw(`Issue: ${formatDate(detail.issue_date)}`, 360, 10);
-  y -= 16;
-  draw(`Due: ${formatDate(detail.due_date)}`, 360, 10);
-
-  y = 570;
-  page.drawLine({ start: { x: margin, y }, end: { x: 564, y }, thickness: 1, color: rgb(0.75, 0.75, 0.78) });
-  y -= 22;
-  draw("Description", margin, 10, true);
-  draw("Qty", 350, 10, true);
-  draw("Unit", 410, 10, true);
-  draw("Total", 500, 10, true);
-  y -= 14;
-  page.drawLine({ start: { x: margin, y }, end: { x: 564, y }, thickness: 1, color: rgb(0.85, 0.85, 0.88) });
-  y -= 20;
-
-  for (const item of detail.invoice_items) {
-    const descriptionLines = wrapText(item.description, 48);
-    draw(descriptionLines[0] || "", margin, 10);
-    draw(Number(item.quantity).toFixed(2), 350, 10);
-    draw(money(item.unit_price), 410, 10);
-    draw(money(item.line_total), 500, 10);
-    for (const extraLine of descriptionLines.slice(1)) {
-      y -= 14;
-      draw(extraLine, margin, 10);
-    }
-    y -= 22;
-  }
-
-  y -= 10;
-  const totalsX = 390;
-  const amountX = 500;
-  draw("Subtotal", totalsX, 10);
-  draw(money(detail.subtotal), amountX, 10);
-  y -= 16;
-  draw("Discount", totalsX, 10);
-  draw(money(detail.discount_amount), amountX, 10);
-  y -= 16;
-  draw("Tax", totalsX, 10);
-  draw(money(detail.tax_amount), amountX, 10);
-  y -= 20;
-  draw("Total", totalsX, 12, true);
-  draw(money(detail.total_amount), amountX, 12, true);
-
-  y -= 46;
-  if (detail.notes) {
-    draw("Notes", margin, 10, true);
-    y -= 15;
-    for (const line of wrapText(detail.notes, 86)) {
-      draw(line, margin, 9);
-      y -= 12;
-    }
-  }
-
-  if (detail.terms) {
-    y -= 8;
-    draw("Terms", margin, 10, true);
-    y -= 15;
-    for (const line of wrapText(detail.terms, 86)) {
-      draw(line, margin, 9);
-      y -= 12;
-    }
-  }
+  drawPageBorder(page, margin);
+  drawHero(page, bold, margin, pageTop, rightX, rightWidth);
+  drawCompanyPanel(page, font, bold, margin, 620, leftWidth, company);
+  drawFactsPanel(page, font, bold, rightX, 620, rightWidth, detail);
+  drawAddressPanel(page, font, bold, margin, 478, 262, "Bill To", [
+    detail.customers?.name || "No customer",
+    detail.customers?.contact_name,
+    detail.customers?.address,
+    detail.customers?.email,
+    detail.customers?.phone
+  ]);
+  drawAddressPanel(page, font, bold, rightX, 478, rightWidth, "Ship To", [
+    detail.ship_to_name || detail.customers?.name || "No customer",
+    detail.ship_to_address || detail.customers?.address,
+    detail.ship_to_contact || detail.customers?.contact_name || detail.customers?.email || detail.customers?.phone
+  ]);
+  drawItemsTable(page, font, bold, margin, 354, contentWidth, detail);
+  drawNotesPanel(page, font, bold, margin, 154, 274, detail);
+  drawTotalsPanel(page, font, bold, rightX, 154, rightWidth, detail);
+  drawFooter(page, font, bold, margin, contentWidth);
 
   const bytes = await pdf.save();
   const body = new ArrayBuffer(bytes.byteLength);
@@ -162,8 +124,137 @@ export async function GET(_request: Request, context: RouteContext) {
   });
 }
 
+function drawHero(page: PDFPage, bold: PDFFont, x: number, top: number, rightX: number, rightWidth: number) {
+  drawText(page, "INVOICE", x + 18, top - 50, 54, bold, BLUE);
+  page.drawRectangle({ x: x + 18, y: top - 68, width: 62, height: 5, color: GOLD });
+  page.drawRectangle({ x: x + 84, y: top - 67, width: 250, height: 3, color: BLUE });
+  drawText(page, "WULFZX.UNDERGROUND", rightX, top - 24, 18, bold, BLUE);
+  drawText(page, "AI COMPANY", rightX + 52, top - 44, 9, bold, BLUE);
+  page.drawEllipse({ x: rightX + rightWidth - 62, y: top - 57, xScale: 26, yScale: 26, borderColor: GOLD, borderWidth: 5 });
+  drawText(page, "WZX", rightX + rightWidth - 79, top - 65, 14, bold, BLUE);
+}
+
+function drawCompanyPanel(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, y: number, width: number, settings: CompanySettings | null) {
+  drawPanel(page, x, y, width, 96);
+  page.drawEllipse({ x: x + 66, y: y + 48, xScale: 32, yScale: 32, borderColor: BLUE, borderWidth: 8 });
+  drawText(page, "WZX", x + 45, y + 40, 14, bold, BLUE);
+  const lines = [
+    settings?.company_name || "WULFZX.UNDERGROUND",
+    settings?.company_address,
+    settings?.company_phone ? `Phone: ${settings.company_phone}` : null,
+    settings?.company_email ? `Email: ${settings.company_email}` : null
+  ].filter(Boolean) as string[];
+  drawText(page, lines[0].toUpperCase(), x + 130, y + 70, 13, bold, INK);
+  lines.slice(1, 4).forEach((line, index) => drawText(page, line, x + 130, y + 50 - index * 14, 9, font, INK));
+}
+
+function drawFactsPanel(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, y: number, width: number, detail: Invoice) {
+  drawPanel(page, x, y, width, 96);
+  const facts = [
+    ["Invoice #:", detail.invoice_number],
+    ["Invoice date:", formatDate(detail.issue_date)],
+    ["Due date:", formatDate(detail.due_date)],
+    ["Payment terms:", detail.payment_terms || "Net 30"]
+  ];
+  facts.forEach(([label, value], index) => {
+    const rowY = y + 72 - index * 22;
+    if (index > 0) page.drawLine({ start: { x: x + 12, y: rowY + 11 }, end: { x: x + width - 12, y: rowY + 11 }, thickness: 0.5, color: LIGHT_LINE, dashArray: [2, 2] });
+    drawText(page, label, x + 18, rowY, 9, bold, BLUE);
+    drawText(page, value, x + 112, rowY, 9, font, INK);
+  });
+}
+
+function drawAddressPanel(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, y: number, width: number, title: string, rawLines: Array<string | null | undefined>) {
+  drawPanel(page, x, y, width, 112);
+  drawText(page, title.toUpperCase(), x + 16, y + 92, 13, bold, BLUE);
+  page.drawRectangle({ x: x + 106, y: y + 95, width: 34, height: 4, color: GOLD });
+  const lines = rawLines.filter(Boolean) as string[];
+  lines.slice(0, 5).forEach((line, index) => drawText(page, line, x + 16, y + 70 - index * 14, index === 0 ? 10 : 9, index === 0 ? bold : font, INK));
+}
+
+function drawItemsTable(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, y: number, width: number, detail: Invoice) {
+  const height = 170;
+  drawPanel(page, x, y, width, height);
+  const headerY = y + height - 24;
+  const cols = [x, x + 318, x + 388, x + 466, x + width];
+  page.drawLine({ start: { x, y: headerY }, end: { x: x + width, y: headerY }, thickness: 1, color: BLUE });
+  cols.slice(1, -1).forEach((colX) => page.drawLine({ start: { x: colX, y }, end: { x: colX, y: y + height }, thickness: 1, color: BLUE }));
+  drawText(page, "DESCRIPTION", x + 132, y + height - 17, 10, bold, BLUE);
+  drawText(page, "QTY", cols[1] + 22, y + height - 17, 10, bold, BLUE);
+  drawText(page, "RATE", cols[2] + 24, y + height - 17, 10, bold, BLUE);
+  drawText(page, "AMOUNT", cols[3] + 22, y + height - 17, 10, bold, BLUE);
+
+  detail.invoice_items.slice(0, 6).forEach((item, index) => {
+    const rowY = headerY - 24 - index * 21;
+    page.drawLine({ start: { x: x + 8, y: rowY - 7 }, end: { x: x + width - 8, y: rowY - 7 }, thickness: 0.4, color: LIGHT_LINE, dashArray: [2, 2] });
+    drawText(page, truncate(item.description, 54), x + 12, rowY, 9, font, INK);
+    drawText(page, Number(item.quantity).toFixed(2), cols[1] + 18, rowY, 9, font, INK);
+    drawText(page, money(item.unit_price), cols[2] + 14, rowY, 9, font, INK);
+    drawText(page, money(item.line_total), cols[3] + 18, rowY, 9, font, INK);
+  });
+}
+
+function drawNotesPanel(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, y: number, width: number, detail: Invoice) {
+  drawPanel(page, x, y, width, 128);
+  drawText(page, "NOTES:", x + 14, y + 106, 12, bold, BLUE);
+  const note = detail.notes || detail.terms || "Thank you for your business. Payment is greatly appreciated.";
+  wrapText(note, 42).slice(0, 5).forEach((line, index) => drawText(page, line, x + 14, y + 82 - index * 13, 9, font, INK));
+  if (detail.notes && detail.terms) {
+    wrapText(detail.terms, 42).slice(0, 3).forEach((line, index) => drawText(page, line, x + 14, y + 30 - index * 12, 8, font, MUTED));
+  }
+}
+
+function drawTotalsPanel(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, y: number, width: number, detail: Invoice) {
+  drawPanel(page, x, y, width, 128);
+  const paymentTotal = sumPayments(detail.payments);
+  const rows = [
+    ["Subtotal:", money(detail.subtotal)],
+    ["Tax:", money(detail.tax_amount)],
+    ["Discount:", money(detail.discount_amount)],
+    ["Shipping:", money(detail.shipping_amount ?? 0)],
+    ["Deposit:", money(detail.deposit_amount ?? 0)],
+    ["Paid:", money(paymentTotal)]
+  ];
+  rows.forEach(([label, value], index) => {
+    const rowY = y + 106 - index * 15;
+    page.drawLine({ start: { x: x + 10, y: rowY - 4 }, end: { x: x + width - 10, y: rowY - 4 }, thickness: 0.4, color: LIGHT_LINE, dashArray: [2, 2] });
+    drawText(page, label, x + 12, rowY, 9, bold, INK);
+    drawText(page, value, x + width - 62, rowY, 9, font, INK);
+  });
+  page.drawRectangle({ x, y, width, height: 34, borderColor: GOLD, borderWidth: 1.5, color: rgb(1, 0.98, 0.9) });
+  drawText(page, "TOTAL DUE:", x + 14, y + 10, 18, bold, BLUE);
+  drawText(page, money(invoiceBalance(detail)), x + width - 102, y + 8, 20, bold, BLUE);
+}
+
+function drawFooter(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, width: number) {
+  page.drawLine({ start: { x, y: 44 }, end: { x: x + width, y: 44 }, thickness: 1, color: BLUE });
+  drawText(page, "THANK YOU!", x + 232, 28, 10, bold, BLUE);
+  drawText(page, "WULFZX APPROVED", x + width - 118, 28, 8, bold, BLUE);
+  drawText(page, "invoice by wulfzx.underground", x + width - 130, 14, 8, font, MUTED);
+}
+
+function drawPageBorder(page: PDFPage, margin: number) {
+  page.drawRectangle({ x: margin - 8, y: 18, width: 612 - margin * 2 + 16, height: 744, borderColor: BLUE, borderWidth: 1.5 });
+}
+
+function drawPanel(page: PDFPage, x: number, y: number, width: number, height: number) {
+  page.drawRectangle({ x, y, width, height, borderColor: BLUE, borderWidth: 1.25, color: rgb(1, 1, 1) });
+}
+
+function drawText(page: PDFPage, text: string, x: number, y: number, size: number, font: PDFFont, color = INK) {
+  page.drawText(sanitizePdfText(text), { x, y, size, font, color });
+}
+
+function money(value: number | string) {
+  return `$${Number(value ?? 0).toFixed(2)}`;
+}
+
+function truncate(text: string, maxLength: number) {
+  return text.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
+}
+
 function wrapText(text: string, maxLength: number): string[] {
-  const words = text.split(/\s+/);
+  const words = sanitizePdfText(text).split(/\s+/);
   const lines: string[] = [];
   let current = "";
 
@@ -179,4 +270,8 @@ function wrapText(text: string, maxLength: number): string[] {
 
   if (current) lines.push(current);
   return lines;
+}
+
+function sanitizePdfText(text: string) {
+  return String(text ?? "").replace(/[^\x09\x0a\x0d\x20-\x7e]/g, "");
 }

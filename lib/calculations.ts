@@ -8,8 +8,8 @@ export function calculateSubtotal(items: InvoiceItem[]): number {
   return roundMoney(items.reduce((sum, item) => sum + calculateLineTotal(item.quantity, item.unitPrice), 0));
 }
 
-export function calculateInvoiceTotal(subtotal: number, discountAmount = 0, taxAmount = 0): number {
-  return roundMoney(subtotal - discountAmount + taxAmount);
+export function calculateInvoiceTotal(subtotal: number, discountAmount = 0, taxAmount = 0, shippingAmount = 0): number {
+  return roundMoney(subtotal - discountAmount + taxAmount + shippingAmount);
 }
 
 export function calculateBalanceDue(totalAmount: number, amountReceived: number): number {

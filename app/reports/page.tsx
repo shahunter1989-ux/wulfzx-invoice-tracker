@@ -19,6 +19,7 @@ type Invoice = {
   issue_date: string;
   due_date: string | null;
   total_amount: number | string;
+  deposit_amount: number | string;
   customers: { name: string } | null;
   payments: { amount: number | string | null }[] | null;
 };
@@ -43,7 +44,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const monthStartText = monthStart.toISOString().slice(0, 10);
   const { data: invoices } = await supabase
     .from("invoices")
-    .select("id,invoice_number,status,issue_date,due_date,total_amount,customers(name),payments(amount)")
+    .select("id,invoice_number,status,issue_date,due_date,total_amount,deposit_amount,customers(name),payments(amount)")
     .eq("workspace_id", workspace.id)
     .order("issue_date", { ascending: false });
   const { data: payments } = await supabase.from("payments").select("amount,payment_date").eq("workspace_id", workspace.id).gte("payment_date", monthStartText);
@@ -53,7 +54,9 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const paymentRows = (payments ?? []) as unknown as Payment[];
   const expenseRows = (expenses ?? []) as unknown as Expense[];
   const monthlySales = invoiceRows.filter((invoice) => invoice.issue_date >= monthStartText).reduce((sum, invoice) => sum + Number(invoice.total_amount ?? 0), 0);
-  const monthlyReceived = paymentRows.reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0);
+  const monthlyReceived =
+    paymentRows.reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0) +
+    invoiceRows.filter((invoice) => invoice.issue_date >= monthStartText).reduce((sum, invoice) => sum + Number(invoice.deposit_amount ?? 0), 0);
   const monthlyExpenses = expenseRows.reduce((sum, expense) => sum + Number(expense.amount ?? 0), 0);
   const outstandingInvoices = invoiceRows.filter((invoice) => invoiceBalance(invoice) > 0);
   const overdueInvoices = outstandingInvoices.filter((invoice) => invoice.status === "overdue");
@@ -100,7 +103,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                   </td>
                   <td>{invoice.customers?.name || "No customer"}</td>
                   <td>{formatDate(invoice.due_date)}</td>
-                  <td>{formatCurrency(sumPayments(invoice.payments))}</td>
+                  <td>{formatCurrency(Number(invoice.deposit_amount ?? 0) + sumPayments(invoice.payments))}</td>
                   <td>{formatCurrency(invoiceBalance(invoice))}</td>
                   <td>
                     <span className="status-pill">{invoice.status.replace("_", " ")}</span>

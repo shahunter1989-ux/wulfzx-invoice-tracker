@@ -12,6 +12,7 @@ type Invoice = {
   status: string;
   due_date: string | null;
   total_amount: number | string;
+  deposit_amount: number | string;
   customers: { name: string } | null;
   payments: { amount: number | string | null }[] | null;
 };
@@ -25,7 +26,7 @@ export default async function DashboardPage() {
   await ensureUserDefaults(supabase, user, workspace.id);
   const { data: invoices } = await supabase
     .from("invoices")
-    .select("id,invoice_number,status,due_date,total_amount,customers(name),payments(amount)")
+    .select("id,invoice_number,status,due_date,total_amount,deposit_amount,customers(name),payments(amount)")
     .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: false });
   const { data: expenses } = await supabase.from("expenses").select("amount").eq("workspace_id", workspace.id);
@@ -33,7 +34,7 @@ export default async function DashboardPage() {
   const invoiceRows = (invoices ?? []) as unknown as Invoice[];
   const expenseRows = (expenses ?? []) as unknown as Expense[];
   const totalSales = invoiceRows.reduce((sum, invoice) => sum + Number(invoice.total_amount ?? 0), 0);
-  const totalReceived = invoiceRows.reduce((sum, invoice) => sum + sumPayments(invoice.payments), 0);
+  const totalReceived = invoiceRows.reduce((sum, invoice) => sum + Number(invoice.deposit_amount ?? 0) + sumPayments(invoice.payments), 0);
   const outstanding = invoiceRows.reduce((sum, invoice) => sum + invoiceBalance(invoice), 0);
   const totalExpenses = expenseRows.reduce((sum, expense) => sum + Number(expense.amount ?? 0), 0);
   const overdue = invoiceRows.filter((invoice) => invoice.status === "overdue").length;

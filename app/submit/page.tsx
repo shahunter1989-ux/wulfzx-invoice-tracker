@@ -126,6 +126,20 @@ export default async function SubmitPage({ searchParams }: SubmitPageProps) {
                 <input name="due_date" type="date" />
               </label>
             </div>
+            <div className="two-column">
+              <label>
+                Ship to name
+                <input name="ship_to_name" placeholder="Leave blank to use customer" />
+              </label>
+              <label>
+                Ship to contact
+                <input name="ship_to_contact" />
+              </label>
+            </div>
+            <label>
+              Ship to address
+              <textarea name="ship_to_address" rows={3} />
+            </label>
             {[0, 1, 2].map((index) => (
               <div className="line-item-row" key={index}>
                 <label>
@@ -152,6 +166,20 @@ export default async function SubmitPage({ searchParams }: SubmitPageProps) {
                 <input name="tax_amount" type="number" min="0" step="0.01" />
               </label>
             </div>
+            <div className="two-column">
+              <label>
+                Shipping amount
+                <input name="shipping_amount" type="number" min="0" step="0.01" />
+              </label>
+              <label>
+                Deposit amount
+                <input name="deposit_amount" type="number" min="0" step="0.01" />
+              </label>
+            </div>
+            <label>
+              Payment terms
+              <input name="payment_terms" defaultValue="Net 30" />
+            </label>
             <label>
               Notes
               <textarea name="notes" rows={3} />

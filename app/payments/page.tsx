@@ -15,6 +15,7 @@ type InvoiceOption = {
   id: string;
   invoice_number: string;
   total_amount: number | string;
+  deposit_amount: number | string;
   customers: { name: string } | null;
   payments: { amount: number | string | null }[] | null;
 };
@@ -34,7 +35,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   await ensureUserDefaults(supabase, user, workspace.id);
   const { data: invoices } = await supabase
     .from("invoices")
-    .select("id,invoice_number,total_amount,customers(name),payments(amount)")
+    .select("id,invoice_number,total_amount,deposit_amount,customers(name),payments(amount)")
     .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: false });
   const { data: payments } = await supabase

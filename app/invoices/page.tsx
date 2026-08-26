@@ -18,6 +18,7 @@ type InvoiceRow = {
   issue_date: string;
   due_date: string | null;
   total_amount: number | string;
+  deposit_amount: number | string;
   customers: { name: string } | null;
   payments: { amount: number | string | null }[] | null;
 };
@@ -28,7 +29,7 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
   await ensureUserDefaults(supabase, user, workspace.id);
   const { data: invoices } = await supabase
     .from("invoices")
-    .select("id,invoice_number,status,issue_date,due_date,total_amount,customers(name),payments(amount)")
+    .select("id,invoice_number,status,issue_date,due_date,total_amount,deposit_amount,customers(name),payments(amount)")
     .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: false });
 
@@ -72,7 +73,7 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
                 <td>{formatDate(invoice.issue_date)}</td>
                 <td>{formatDate(invoice.due_date)}</td>
                 <td>{formatCurrency(invoice.total_amount)}</td>
-                <td>{formatCurrency(sumPayments(invoice.payments))}</td>
+                <td>{formatCurrency(Number(invoice.deposit_amount ?? 0) + sumPayments(invoice.payments))}</td>
                 <td>{formatCurrency(invoiceBalance(invoice))}</td>
                 <td>
                   <span className="status-pill">{invoice.status.replace("_", " ")}</span>

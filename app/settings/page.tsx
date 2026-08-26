@@ -16,6 +16,7 @@ type Settings = {
   default_currency: string;
   default_tax_rate: number | string;
   invoice_prefix: string;
+  invoice_template: string;
 };
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
@@ -24,7 +25,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   await ensureUserDefaults(supabase, user, workspace.id);
   const { data } = await supabase
     .from("company_settings")
-    .select("company_name,company_email,company_phone,company_address,default_currency,default_tax_rate,invoice_prefix")
+    .select("company_name,company_email,company_phone,company_address,default_currency,default_tax_rate,invoice_prefix,invoice_template")
     .eq("workspace_id", workspace.id)
     .single();
   const settings = data as Settings | null;
@@ -43,6 +44,12 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         <label>
           Invoice prefix
           <input name="invoice_prefix" defaultValue={settings?.invoice_prefix || "WZX"} required />
+        </label>
+        <label>
+          Invoice template
+          <select name="invoice_template" defaultValue={settings?.invoice_template || "wulfzx_blueprint"}>
+            <option value="wulfzx_blueprint">Wulfzx Blueprint</option>
+          </select>
         </label>
         <label>
           Default currency

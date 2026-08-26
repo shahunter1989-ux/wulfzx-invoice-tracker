@@ -21,9 +21,12 @@ export function InvoiceForm({ customers }: { customers: CustomerOption[] }) {
   const [items, setItems] = useState<LineItem[]>([{ description: "", quantity: 1, unitPrice: 0 }]);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
+  const [shipping, setShipping] = useState(0);
+  const [deposit, setDeposit] = useState(0);
 
   const subtotal = useMemo(() => calculateSubtotal(items), [items]);
-  const total = calculateInvoiceTotal(subtotal, discount, tax);
+  const total = calculateInvoiceTotal(subtotal, discount, tax, shipping);
+  const totalDue = Math.max(total - deposit, 0);
 
   function updateItem(index: number, key: keyof LineItem, value: string) {
     setItems((current) =>
@@ -71,6 +74,22 @@ export function InvoiceForm({ customers }: { customers: CustomerOption[] }) {
         </label>
       </div>
 
+      <div className="two-column">
+        <label>
+          Ship to name
+          <input name="ship_to_name" placeholder="Leave blank to use customer name" />
+        </label>
+        <label>
+          Ship to contact
+          <input name="ship_to_contact" placeholder="Email, phone, or contact person" />
+        </label>
+      </div>
+
+      <label>
+        Ship to address
+        <textarea name="ship_to_address" rows={3} placeholder="Leave blank to use customer billing address" />
+      </label>
+
       <div className="line-items">
         <div className="line-item-header">
           <h2>Line Items</h2>
@@ -114,6 +133,17 @@ export function InvoiceForm({ customers }: { customers: CustomerOption[] }) {
         </label>
       </div>
 
+      <div className="two-column">
+        <label>
+          Shipping amount
+          <input name="shipping_amount" type="number" min="0" step="0.01" value={shipping} onChange={(event) => setShipping(Number(event.target.value || 0))} />
+        </label>
+        <label>
+          Deposit amount
+          <input name="deposit_amount" type="number" min="0" step="0.01" value={deposit} onChange={(event) => setDeposit(Number(event.target.value || 0))} />
+        </label>
+      </div>
+
       <div className="totals-panel">
         <div>
           <span>Subtotal</span>
@@ -123,6 +153,10 @@ export function InvoiceForm({ customers }: { customers: CustomerOption[] }) {
           <span>Total</span>
           <strong>{formatCurrency(total)}</strong>
         </div>
+        <div>
+          <span>Total due</span>
+          <strong>{formatCurrency(totalDue)}</strong>
+        </div>
       </div>
 
       <label>
@@ -130,8 +164,12 @@ export function InvoiceForm({ customers }: { customers: CustomerOption[] }) {
         <textarea name="notes" rows={3} />
       </label>
       <label>
+        Payment terms
+        <input name="payment_terms" defaultValue="Net 30" />
+      </label>
+      <label>
         Terms
-        <textarea name="terms" rows={3} defaultValue="Payment is due by the listed due date." />
+        <textarea name="terms" rows={3} defaultValue="Payment is due by the listed due date. Thank you for your business." />
       </label>
       <button type="submit" disabled={customers.length === 0}>
         Save Invoice

@@ -23,7 +23,7 @@ export async function GET(_request: Request, context: RouteContext) {
   } else if (type === "invoices") {
     const { data, error } = await supabase
       .from("invoices")
-      .select("created_at,invoice_number,status,issue_date,due_date,subtotal,discount_amount,tax_amount,total_amount,notes,terms,customers(name)")
+      .select("created_at,invoice_number,status,issue_date,due_date,subtotal,discount_amount,tax_amount,shipping_amount,deposit_amount,total_amount,ship_to_name,ship_to_address,ship_to_contact,payment_terms,notes,terms,customers(name)")
       .eq("workspace_id", workspace.id)
       .order("created_at", { ascending: false });
     if (error) return new Response(error.message, { status: 500 });

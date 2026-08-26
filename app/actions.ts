@@ -181,7 +181,9 @@ export async function createInvoiceAction(formData: FormData) {
   const subtotal = calculateSubtotal(items);
   const discountAmount = toMoney(formData.get("discount_amount"));
   const taxAmount = toMoney(formData.get("tax_amount"));
-  const totalAmount = calculateInvoiceTotal(subtotal, discountAmount, taxAmount);
+  const shippingAmount = toMoney(formData.get("shipping_amount"));
+  const depositAmount = toMoney(formData.get("deposit_amount"));
+  const totalAmount = calculateInvoiceTotal(subtotal, discountAmount, taxAmount, shippingAmount);
 
   const { data: invoice, error: invoiceError } = await supabase
     .from("invoices")
@@ -196,7 +198,13 @@ export async function createInvoiceAction(formData: FormData) {
       subtotal,
       discount_amount: discountAmount,
       tax_amount: taxAmount,
+      shipping_amount: shippingAmount,
+      deposit_amount: depositAmount,
       total_amount: totalAmount,
+      ship_to_name: toText(formData.get("ship_to_name")) || null,
+      ship_to_address: toText(formData.get("ship_to_address")) || null,
+      ship_to_contact: toText(formData.get("ship_to_contact")) || null,
+      payment_terms: toText(formData.get("payment_terms")) || null,
       notes: toText(formData.get("notes")) || null,
       terms: toText(formData.get("terms")) || null
     })
@@ -295,7 +303,7 @@ export async function recordPaymentAction(formData: FormData) {
     redirect(`/payments?error=${encodeURIComponent(error.message)}`);
   }
 
-  const { data: invoice } = await supabase.from("invoices").select("id,status,total_amount,due_date").eq("id", invoiceId).eq("workspace_id", workspace.id).single();
+  const { data: invoice } = await supabase.from("invoices").select("id,status,total_amount,deposit_amount,due_date").eq("id", invoiceId).eq("workspace_id", workspace.id).single();
   if (invoice) {
     await updateInvoiceStatus(supabase, invoice);
   }
@@ -416,7 +424,8 @@ export async function updateSettingsAction(formData: FormData) {
       company_address: toText(formData.get("company_address")) || null,
       default_currency: toText(formData.get("default_currency")) || "USD",
       default_tax_rate: toMoney(formData.get("default_tax_rate")),
-      invoice_prefix: toText(formData.get("invoice_prefix")) || "WZX"
+      invoice_prefix: toText(formData.get("invoice_prefix")) || "WZX",
+      invoice_template: toText(formData.get("invoice_template")) || "wulfzx_blueprint"
     },
     { onConflict: "workspace_id" }
   );
@@ -701,7 +710,9 @@ async function approveSubmissionPayload(params: {
     const subtotal = calculateSubtotal(items);
     const discountAmount = getPayloadMoney(payload, "discount_amount");
     const taxAmount = getPayloadMoney(payload, "tax_amount");
-    const totalAmount = calculateInvoiceTotal(subtotal, discountAmount, taxAmount);
+    const shippingAmount = getPayloadMoney(payload, "shipping_amount");
+    const depositAmount = getPayloadMoney(payload, "deposit_amount");
+    const totalAmount = calculateInvoiceTotal(subtotal, discountAmount, taxAmount, shippingAmount);
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
       .insert({
@@ -715,7 +726,13 @@ async function approveSubmissionPayload(params: {
         subtotal,
         discount_amount: discountAmount,
         tax_amount: taxAmount,
+        shipping_amount: shippingAmount,
+        deposit_amount: depositAmount,
         total_amount: totalAmount,
+        ship_to_name: getPayloadText(payload, "ship_to_name") || null,
+        ship_to_address: getPayloadText(payload, "ship_to_address") || null,
+        ship_to_contact: getPayloadText(payload, "ship_to_contact") || null,
+        payment_terms: getPayloadText(payload, "payment_terms") || null,
         notes: getPayloadText(payload, "notes") || null,
         terms: getPayloadText(payload, "terms") || null
       })
@@ -761,7 +778,7 @@ async function approveSubmissionPayload(params: {
       .select("id")
       .single();
     if (error || !data) throw new Error(error?.message || "Could not create payment.");
-    const { data: invoice } = await supabase.from("invoices").select("id,status,total_amount,due_date").eq("id", invoiceId).eq("workspace_id", workspace.id).single();
+    const { data: invoice } = await supabase.from("invoices").select("id,status,total_amount,deposit_amount,due_date").eq("id", invoiceId).eq("workspace_id", workspace.id).single();
     if (invoice) await updateInvoiceStatus(supabase, invoice);
     await logAuditEvent(supabase, { workspaceId: workspace.id, actorId: user.id, action: "approve_create", entityType: "payment", entityId: data.id, metadata: { invoiceId, amount } });
     return data.id;

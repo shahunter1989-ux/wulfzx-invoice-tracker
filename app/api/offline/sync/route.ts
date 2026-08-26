@@ -159,7 +159,9 @@ async function syncInvoiceDraft(context: WorkspaceContext, payload: DraftPayload
   const subtotal = calculateSubtotal(items);
   const discountAmount = getMoney(payload, "discount_amount");
   const taxAmount = getMoney(payload, "tax_amount");
-  const totalAmount = calculateInvoiceTotal(subtotal, discountAmount, taxAmount);
+  const shippingAmount = getMoney(payload, "shipping_amount");
+  const depositAmount = getMoney(payload, "deposit_amount");
+  const totalAmount = calculateInvoiceTotal(subtotal, discountAmount, taxAmount, shippingAmount);
 
   const { data: invoice, error: invoiceError } = await supabase
     .from("invoices")
@@ -174,7 +176,13 @@ async function syncInvoiceDraft(context: WorkspaceContext, payload: DraftPayload
       subtotal,
       discount_amount: discountAmount,
       tax_amount: taxAmount,
+      shipping_amount: shippingAmount,
+      deposit_amount: depositAmount,
       total_amount: totalAmount,
+      ship_to_name: getText(payload, "ship_to_name") || null,
+      ship_to_address: getText(payload, "ship_to_address") || null,
+      ship_to_contact: getText(payload, "ship_to_contact") || null,
+      payment_terms: getText(payload, "payment_terms") || null,
       notes: getText(payload, "notes") || null,
       terms: getText(payload, "terms") || null
     })
@@ -233,7 +241,7 @@ async function syncPaymentDraft(context: WorkspaceContext, payload: DraftPayload
     throw new Error(error?.message || "Could not save payment.");
   }
 
-  const { data: invoice } = await supabase.from("invoices").select("id,status,total_amount,due_date").eq("id", invoiceId).eq("workspace_id", workspace.id).single();
+  const { data: invoice } = await supabase.from("invoices").select("id,status,total_amount,deposit_amount,due_date").eq("id", invoiceId).eq("workspace_id", workspace.id).single();
   if (invoice) {
     await updateInvoiceStatus(supabase, invoice);
   }

@@ -329,10 +329,225 @@ td a {
   padding: 56px;
 }
 
+.wulfzx-invoice {
+  --blue: #0b3f7d;
+  --deep-blue: #072e5f;
+  --gold: #f4b51d;
+  --soft-blue: #dbeafe;
+  border: 2px solid var(--blue);
+  font-family: Arial, Helvetica, sans-serif;
+  gap: 18px;
+  overflow: hidden;
+  padding: 28px;
+}
+
 .invoice-document p,
 .invoice-document h2,
 .invoice-document h3 {
   margin: 0;
+}
+
+.wulfzx-invoice-hero {
+  align-items: start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 28px;
+}
+
+.wulfzx-invoice-hero h2 {
+  color: var(--deep-blue);
+  font-size: 78px;
+  letter-spacing: 0;
+  line-height: 0.9;
+  margin: 0;
+}
+
+.wulfzx-hero-rule {
+  background: linear-gradient(90deg, var(--gold) 0 18%, var(--blue) 18% 100%);
+  height: 5px;
+  margin-top: 10px;
+  max-width: 520px;
+}
+
+.wulfzx-brand-lockup {
+  color: var(--deep-blue);
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.wulfzx-brand-lockup strong {
+  font-size: 26px;
+}
+
+.wulfzx-badge {
+  align-items: center;
+  border: 6px solid var(--gold);
+  border-radius: 999px;
+  color: var(--deep-blue);
+  display: inline-flex;
+  font-size: 22px;
+  font-weight: 900;
+  height: 76px;
+  justify-content: center;
+  width: 76px;
+}
+
+.wulfzx-top-grid,
+.wulfzx-address-grid,
+.wulfzx-bottom-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.wulfzx-panel {
+  border: 2px solid var(--blue);
+  border-radius: 6px;
+  color: #111827;
+  padding: 18px;
+  position: relative;
+}
+
+.company-panel {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  min-height: 150px;
+}
+
+.wulfzx-mark {
+  align-items: center;
+  border: 10px solid var(--blue);
+  border-radius: 999px;
+  color: var(--blue);
+  display: flex;
+  font-size: 22px;
+  font-weight: 900;
+  height: 92px;
+  justify-content: center;
+  width: 92px;
+}
+
+.company-panel h3,
+.address-panel h3 {
+  color: #111827;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.invoice-facts {
+  display: grid;
+  gap: 0;
+}
+
+.invoice-facts div,
+.totals-panel-blueprint div {
+  align-items: center;
+  border-bottom: 1px dashed #b8c2cc;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 30px;
+}
+
+.invoice-facts div:last-child,
+.totals-panel-blueprint div:last-child {
+  border-bottom: 0;
+}
+
+.invoice-facts strong,
+.totals-panel-blueprint span,
+.wulfzx-tab {
+  color: var(--deep-blue);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.wulfzx-tab {
+  background: white;
+  display: inline-flex;
+  font-size: 18px;
+  margin: -22px 0 12px;
+  padding-right: 18px;
+}
+
+.address-panel {
+  min-height: 170px;
+}
+
+.address-panel p {
+  margin-top: 6px;
+}
+
+.wulfzx-lines {
+  border: 2px solid var(--blue);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.wulfzx-lines th {
+  color: var(--deep-blue);
+  font-size: 16px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.wulfzx-lines th,
+.wulfzx-lines td {
+  border-color: #9bb2cc;
+  border-right: 1px solid #9bb2cc;
+}
+
+.wulfzx-lines th:last-child,
+.wulfzx-lines td:last-child {
+  border-right: 0;
+}
+
+.notes-panel {
+  min-height: 190px;
+}
+
+.notes-panel p + p {
+  margin-top: 12px;
+}
+
+.totals-panel-blueprint {
+  display: grid;
+  gap: 0;
+}
+
+.total-due-row {
+  background: #fff8e1;
+  border: 2px solid var(--gold) !important;
+  margin: 8px -10px -10px;
+  padding: 10px;
+}
+
+.total-due-row span,
+.total-due-row strong {
+  color: var(--deep-blue);
+  font-size: 24px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.wulfzx-invoice-footer {
+  align-items: center;
+  border-top: 2px solid var(--blue);
+  color: var(--deep-blue);
+  display: flex;
+  justify-content: space-between;
+  letter-spacing: 0;
+  margin-top: 6px;
+  padding-top: 12px;
+}
+
+.wulfzx-invoice-footer span,
+.wulfzx-invoice-footer strong {
+  font-weight: 900;
 }
 
 .invoice-doc-header,
@@ -473,6 +688,27 @@ td a {
   .invoice-document {
     padding: 28px;
     min-height: auto;
+  }
+
+  .wulfzx-invoice {
+    padding: 18px;
+  }
+
+  .wulfzx-invoice-hero,
+  .wulfzx-top-grid,
+  .wulfzx-address-grid,
+  .wulfzx-bottom-grid,
+  .company-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .wulfzx-invoice-hero h2 {
+    font-size: 48px;
+  }
+
+  .wulfzx-brand-lockup {
+    justify-items: start;
+    text-align: left;
   }
 
   .invoice-meta {
