@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { deleteInvoiceAction, markInvoiceStatusAction, recordPaymentAction } from "../../actions";
+import { deleteInvoiceAction, markInvoiceStatusAction, recordPaymentAction, updateInvoiceTemplateAction } from "../../actions";
 import { ConfirmSubmitButton } from "../../../components/ConfirmSubmitButton";
+import { InvoiceDocument } from "../../../components/InvoiceDocument";
+import { InvoiceTemplateSelect } from "../../../components/InvoiceTemplateSelect";
 import { OfflineForm } from "../../../components/OfflineForm";
 import { PrintButton } from "../../../components/PrintButton";
-import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../../lib/data";
+import { ensureUserDefaults } from "../../../lib/data";
 import { formatCurrency, formatDate } from "../../../lib/format";
+import { getInvoiceTemplate } from "../../../lib/invoiceTemplates";
 import { requireOwner } from "../../../lib/workspace";
 
 export const dynamic = "force-dynamic";
 
 type InvoiceDetailPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string }>;
 };
 
 type Invoice = {
@@ -21,6 +24,7 @@ type Invoice = {
   status: string;
   issue_date: string;
   due_date: string | null;
+  invoice_template: string | null;
   subtotal: number | string;
   discount_amount: number | string;
   tax_amount: number | string;
@@ -56,31 +60,35 @@ type Invoice = {
   }[];
 };
 
+type CompanySettings = {
+  company_name: string | null;
+  company_email: string | null;
+  company_phone: string | null;
+  company_address: string | null;
+};
+
 export default async function InvoiceDetailPage({ params, searchParams }: InvoiceDetailPageProps) {
   const { id } = await params;
   const query = await searchParams;
   const { supabase, user, workspace } = await requireOwner();
   await ensureUserDefaults(supabase, user, workspace.id);
 
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select(
-      "id,invoice_number,status,issue_date,due_date,subtotal,discount_amount,tax_amount,shipping_amount,deposit_amount,total_amount,ship_to_name,ship_to_address,ship_to_contact,payment_terms,notes,terms,customers(name,contact_name,email,phone,address),invoice_items(id,description,quantity,unit_price,line_total),payments(id,payment_date,amount,payment_method,reference_number)"
-    )
-    .eq("id", id)
-    .eq("workspace_id", workspace.id)
-    .single();
+  const [{ data: invoice }, { data: settings }] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select(
+        "id,invoice_number,status,issue_date,due_date,invoice_template,subtotal,discount_amount,tax_amount,shipping_amount,deposit_amount,total_amount,ship_to_name,ship_to_address,ship_to_contact,payment_terms,notes,terms,customers(name,contact_name,email,phone,address),invoice_items(id,description,quantity,unit_price,line_total),payments(id,payment_date,amount,payment_method,reference_number)"
+      )
+      .eq("id", id)
+      .eq("workspace_id", workspace.id)
+      .single(),
+    supabase.from("company_settings").select("company_name,company_email,company_phone,company_address").eq("workspace_id", workspace.id).maybeSingle()
+  ]);
 
   if (!invoice) notFound();
 
   const detail = invoice as unknown as Invoice;
-  const paymentTotal = sumPayments(detail.payments);
-  const balance = invoiceBalance(detail);
-  const billToLines = [detail.customers?.contact_name, detail.customers?.address, detail.customers?.email, detail.customers?.phone].filter(Boolean);
-  const shipToLines = [
-    detail.ship_to_address || detail.customers?.address,
-    detail.ship_to_contact || detail.customers?.contact_name || detail.customers?.email || detail.customers?.phone
-  ].filter(Boolean);
+  const activeTemplate = getInvoiceTemplate(detail.invoice_template);
 
   return (
     <section className="invoice-detail">
@@ -101,136 +109,21 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
       </div>
 
       {query.error ? <div className="notice error no-print">{query.error}</div> : null}
+      {query.saved === "template" ? <div className="notice success no-print">Invoice template updated.</div> : null}
 
       <div className="invoice-workspace">
-        <article className="invoice-document wulfzx-invoice">
-          <header className="wulfzx-invoice-hero">
-            <div>
-              <h2>INVOICE</h2>
-              <div className="wulfzx-hero-rule" />
-            </div>
-            <div className="wulfzx-brand-lockup">
-              <strong>WULFZX.UNDERGROUND</strong>
-              <span>AI COMPANY</span>
-              <span className="wulfzx-badge">WZX</span>
-            </div>
-          </header>
-
-          <section className="wulfzx-top-grid">
-            <div className="wulfzx-panel company-panel">
-              <div className="wulfzx-mark" aria-hidden="true">
-                WZX
-              </div>
-              <div>
-                <h3>WULFZX.UNDERGROUND</h3>
-                <p>AI company</p>
-                <p>Thank you for your business.</p>
-              </div>
-            </div>
-            <div className="wulfzx-panel invoice-facts">
-              <div>
-                <strong>Invoice #:</strong>
-                <span>{detail.invoice_number}</span>
-              </div>
-              <div>
-                <strong>Invoice date:</strong>
-                <span>{formatDate(detail.issue_date)}</span>
-              </div>
-              <div>
-                <strong>Due date:</strong>
-                <span>{formatDate(detail.due_date)}</span>
-              </div>
-              <div>
-                <strong>Payment terms:</strong>
-                <span>{detail.payment_terms || "Net 30"}</span>
-              </div>
-            </div>
-          </section>
-
-          <section className="wulfzx-address-grid">
-            <div className="wulfzx-panel address-panel">
-              <span className="wulfzx-tab">Bill To</span>
-              <h3>{detail.customers?.name || "No customer"}</h3>
-              {billToLines.map((line) => (
-                <p key={String(line)}>{line}</p>
-              ))}
-            </div>
-            <div className="wulfzx-panel address-panel">
-              <span className="wulfzx-tab">Ship To</span>
-              <h3>{detail.ship_to_name || detail.customers?.name || "No customer"}</h3>
-              {shipToLines.map((line) => (
-                <p key={String(line)}>{line}</p>
-              ))}
-            </div>
-          </section>
-
-          <table className="invoice-lines wulfzx-lines">
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Qty</th>
-                <th>Unit</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {detail.invoice_items.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.description}</td>
-                  <td>{Number(item.quantity).toFixed(2)}</td>
-                  <td>{formatCurrency(item.unit_price)}</td>
-                  <td>{formatCurrency(item.line_total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <section className="wulfzx-bottom-grid">
-            <div className="wulfzx-panel notes-panel">
-              <span className="wulfzx-tab">Notes</span>
-              <p>{detail.notes || detail.terms || "Thank you for your business. Payment is greatly appreciated."}</p>
-              {detail.notes && detail.terms ? <p>{detail.terms}</p> : null}
-            </div>
-            <div className="wulfzx-panel totals-panel-blueprint">
-              <div>
-                <span>Subtotal:</span>
-                <strong>{formatCurrency(detail.subtotal)}</strong>
-              </div>
-              <div>
-                <span>Tax:</span>
-                <strong>{formatCurrency(detail.tax_amount)}</strong>
-              </div>
-              <div>
-                <span>Discount:</span>
-                <strong>{formatCurrency(detail.discount_amount)}</strong>
-              </div>
-              <div>
-                <span>Shipping:</span>
-                <strong>{formatCurrency(detail.shipping_amount ?? 0)}</strong>
-              </div>
-              <div>
-                <span>Deposit:</span>
-                <strong>{formatCurrency(detail.deposit_amount ?? 0)}</strong>
-              </div>
-              <div>
-                <span>Paid:</span>
-                <strong>{formatCurrency(paymentTotal)}</strong>
-              </div>
-              <div className="total-due-row">
-                <span>Total Due:</span>
-                <strong>{formatCurrency(balance)}</strong>
-              </div>
-            </div>
-          </section>
-
-          <footer className="wulfzx-invoice-footer">
-            <span>THANK YOU</span>
-            <strong>WULFZX APPROVED</strong>
-          </footer>
-        </article>
+        <InvoiceDocument detail={detail} company={settings as CompanySettings | null} />
 
         <aside className="card no-print">
           <h2>Invoice Actions</h2>
+          <p className="muted">Current template: {activeTemplate.name}</p>
+          <form action={updateInvoiceTemplateAction} className="grid form-grid">
+            <input type="hidden" name="invoice_id" value={detail.id} />
+            <InvoiceTemplateSelect defaultValue={detail.invoice_template} label="Change invoice template" />
+            <button type="submit" className="secondary-button">
+              Update Template
+            </button>
+          </form>
           <div className="action-row">
             <form action={markInvoiceStatusAction}>
               <input type="hidden" name="invoice_id" value={detail.id} />

@@ -33,7 +33,7 @@ create table if not exists public.company_settings (
   default_currency text not null default 'USD',
   default_tax_rate numeric(10, 4) not null default 0,
   invoice_prefix text not null default 'WZX',
-  invoice_template text not null default 'wulfzx_blueprint',
+  invoice_template text not null default 'professional_clean',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique(user_id)
@@ -108,6 +108,7 @@ create table if not exists public.invoices (
   shipping_amount numeric(12, 2) not null default 0,
   deposit_amount numeric(12, 2) not null default 0,
   total_amount numeric(12, 2) not null default 0,
+  invoice_template text not null default 'professional_clean',
   ship_to_name text,
   ship_to_address text,
   ship_to_contact text,

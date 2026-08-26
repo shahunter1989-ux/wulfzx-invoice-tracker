@@ -12,6 +12,7 @@ import { createAdminClient } from "../lib/supabase/admin";
 import { cleanEnvValue } from "../lib/supabase/config";
 import { logAuditEvent } from "../lib/audit";
 import { requireOwner, requireWorkspace, type WorkspaceContext, type WorkspaceRole } from "../lib/workspace";
+import { DEFAULT_INVOICE_TEMPLATE, normalizeInvoiceTemplate } from "../lib/invoiceTemplates";
 
 export async function signInAction(formData: FormData) {
   const email = toText(formData.get("email"));
@@ -165,8 +166,9 @@ export async function createInvoiceAction(formData: FormData) {
     redirect("/invoices/new?error=Customer%20and%20at%20least%20one%20line%20item%20are%20required");
   }
 
-  const { data: settings } = await supabase.from("company_settings").select("invoice_prefix").eq("workspace_id", workspace.id).maybeSingle();
+  const { data: settings } = await supabase.from("company_settings").select("invoice_prefix,invoice_template").eq("workspace_id", workspace.id).maybeSingle();
   const prefix = settings?.invoice_prefix || "WZX";
+  const invoiceTemplate = normalizeInvoiceTemplate(toText(formData.get("invoice_template")) || settings?.invoice_template || DEFAULT_INVOICE_TEMPLATE);
   const year = new Date(`${issueDate}T00:00:00`).getFullYear();
   const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_workspace_invoice_number", {
     p_workspace_id: workspace.id,
@@ -201,6 +203,7 @@ export async function createInvoiceAction(formData: FormData) {
       shipping_amount: shippingAmount,
       deposit_amount: depositAmount,
       total_amount: totalAmount,
+      invoice_template: invoiceTemplate,
       ship_to_name: toText(formData.get("ship_to_name")) || null,
       ship_to_address: toText(formData.get("ship_to_address")) || null,
       ship_to_contact: toText(formData.get("ship_to_contact")) || null,
@@ -234,6 +237,26 @@ export async function createInvoiceAction(formData: FormData) {
   await logAuditEvent(supabase, { workspaceId: workspace.id, actorId: user.id, action: "create", entityType: "invoice", entityId: invoice.id, metadata: { invoiceNumber } });
   revalidatePath("/invoices");
   redirect(`/invoices/${invoice.id}`);
+}
+
+export async function updateInvoiceTemplateAction(formData: FormData) {
+  const { supabase, user, workspace } = await requireOwner();
+  const invoiceId = toText(formData.get("invoice_id"));
+  const invoiceTemplate = normalizeInvoiceTemplate(toText(formData.get("invoice_template")));
+
+  if (!invoiceId) {
+    redirect("/invoices?error=Invoice%20record%20is%20required");
+  }
+
+  const { error } = await supabase.from("invoices").update({ invoice_template: invoiceTemplate }).eq("id", invoiceId).eq("workspace_id", workspace.id);
+
+  if (error) {
+    redirect(`/invoices/${invoiceId}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  await logAuditEvent(supabase, { workspaceId: workspace.id, actorId: user.id, action: "template_update", entityType: "invoice", entityId: invoiceId, metadata: { invoiceTemplate } });
+  revalidatePath(`/invoices/${invoiceId}`);
+  redirect(`/invoices/${invoiceId}?saved=template`);
 }
 
 export async function deleteInvoiceAction(formData: FormData) {
@@ -425,7 +448,7 @@ export async function updateSettingsAction(formData: FormData) {
       default_currency: toText(formData.get("default_currency")) || "USD",
       default_tax_rate: toMoney(formData.get("default_tax_rate")),
       invoice_prefix: toText(formData.get("invoice_prefix")) || "WZX",
-      invoice_template: toText(formData.get("invoice_template")) || "wulfzx_blueprint"
+      invoice_template: normalizeInvoiceTemplate(toText(formData.get("invoice_template")) || DEFAULT_INVOICE_TEMPLATE)
     },
     { onConflict: "workspace_id" }
   );
@@ -697,8 +720,9 @@ async function approveSubmissionPayload(params: {
     const items = buildSubmittedInvoiceItems(payload);
     if (!customerId || items.length === 0) throw new Error("Customer and at least one line item are required.");
 
-    const { data: settings } = await supabase.from("company_settings").select("invoice_prefix").eq("workspace_id", workspace.id).maybeSingle();
+    const { data: settings } = await supabase.from("company_settings").select("invoice_prefix,invoice_template").eq("workspace_id", workspace.id).maybeSingle();
     const prefix = settings?.invoice_prefix || "WZX";
+    const invoiceTemplate = normalizeInvoiceTemplate(getPayloadText(payload, "invoice_template") || settings?.invoice_template || DEFAULT_INVOICE_TEMPLATE);
     const year = new Date(`${issueDate}T00:00:00`).getFullYear();
     const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_workspace_invoice_number", {
       p_workspace_id: workspace.id,
@@ -729,6 +753,7 @@ async function approveSubmissionPayload(params: {
         shipping_amount: shippingAmount,
         deposit_amount: depositAmount,
         total_amount: totalAmount,
+        invoice_template: invoiceTemplate,
         ship_to_name: getPayloadText(payload, "ship_to_name") || null,
         ship_to_address: getPayloadText(payload, "ship_to_address") || null,
         ship_to_contact: getPayloadText(payload, "ship_to_contact") || null,

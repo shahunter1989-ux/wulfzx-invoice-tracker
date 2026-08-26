@@ -4,6 +4,7 @@ import type { InvoiceStatus } from "../../../../lib/types";
 import { calculateInvoiceTotal, calculateLineTotal, calculateSubtotal } from "../../../../lib/calculations";
 import { ensureUserDefaults, updateInvoiceStatus } from "../../../../lib/data";
 import { logAuditEvent } from "../../../../lib/audit";
+import { DEFAULT_INVOICE_TEMPLATE, normalizeInvoiceTemplate } from "../../../../lib/invoiceTemplates";
 import { requireWorkspace, type WorkspaceContext } from "../../../../lib/workspace";
 
 type DraftType = "customer" | "invoice" | "payment" | "expense";
@@ -143,8 +144,9 @@ async function syncInvoiceDraft(context: WorkspaceContext, payload: DraftPayload
     throw new Error("Customer and at least one invoice line item are required.");
   }
 
-  const { data: settings } = await supabase.from("company_settings").select("invoice_prefix").eq("workspace_id", workspace.id).maybeSingle();
+  const { data: settings } = await supabase.from("company_settings").select("invoice_prefix,invoice_template").eq("workspace_id", workspace.id).maybeSingle();
   const prefix = settings?.invoice_prefix || "WZX";
+  const invoiceTemplate = normalizeInvoiceTemplate(getText(payload, "invoice_template") || settings?.invoice_template || DEFAULT_INVOICE_TEMPLATE);
   const year = new Date(`${issueDate}T00:00:00`).getFullYear();
   const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_workspace_invoice_number", {
     p_workspace_id: workspace.id,
@@ -179,6 +181,7 @@ async function syncInvoiceDraft(context: WorkspaceContext, payload: DraftPayload
       shipping_amount: shippingAmount,
       deposit_amount: depositAmount,
       total_amount: totalAmount,
+      invoice_template: invoiceTemplate,
       ship_to_name: getText(payload, "ship_to_name") || null,
       ship_to_address: getText(payload, "ship_to_address") || null,
       ship_to_contact: getText(payload, "ship_to_contact") || null,

@@ -1,4 +1,5 @@
 import { OfflineForm } from "../../components/OfflineForm";
+import { InvoiceTemplateSelect } from "../../components/InvoiceTemplateSelect";
 import { DEFAULT_EXPENSE_CATEGORIES } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
 import { requireWorkspace } from "../../lib/workspace";
@@ -32,11 +33,15 @@ type SubmissionRow = {
   created_at: string;
 };
 
+type Settings = {
+  invoice_template: string | null;
+};
+
 export default async function SubmitPage({ searchParams }: SubmitPageProps) {
   const params = await searchParams;
   const { supabase, user, workspace, role } = await requireWorkspace();
 
-  const [{ data: customers }, { data: invoices }, { data: submissions }] = await Promise.all([
+  const [{ data: customers }, { data: invoices }, { data: submissions }, { data: settings }] = await Promise.all([
     supabase.rpc("workspace_customer_picker", { p_workspace_id: workspace.id }),
     supabase.rpc("workspace_invoice_picker", { p_workspace_id: workspace.id }),
     supabase
@@ -44,7 +49,8 @@ export default async function SubmitPage({ searchParams }: SubmitPageProps) {
       .select("id,submission_type,status,review_note,created_at")
       .eq("submitted_by", user.id)
       .order("created_at", { ascending: false })
-      .limit(20)
+      .limit(20),
+    supabase.from("company_settings").select("invoice_template").eq("workspace_id", workspace.id).maybeSingle()
   ]);
 
   const customerOptions = (customers ?? []) as CustomerPicker[];
@@ -117,6 +123,7 @@ export default async function SubmitPage({ searchParams }: SubmitPageProps) {
               </select>
             </label>
             <div className="two-column">
+              <InvoiceTemplateSelect defaultValue={(settings as Settings | null)?.invoice_template} />
               <label>
                 Issue date
                 <input name="issue_date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />

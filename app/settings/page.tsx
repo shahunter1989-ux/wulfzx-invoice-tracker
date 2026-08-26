@@ -1,4 +1,5 @@
 import { updateSettingsAction } from "../actions";
+import { InvoiceTemplateSelect } from "../../components/InvoiceTemplateSelect";
 import { ensureUserDefaults } from "../../lib/data";
 import { requireOwner } from "../../lib/workspace";
 
@@ -45,12 +46,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           Invoice prefix
           <input name="invoice_prefix" defaultValue={settings?.invoice_prefix || "WZX"} required />
         </label>
-        <label>
-          Invoice template
-          <select name="invoice_template" defaultValue={settings?.invoice_template || "wulfzx_blueprint"}>
-            <option value="wulfzx_blueprint">Wulfzx Blueprint</option>
-          </select>
-        </label>
+        <InvoiceTemplateSelect defaultValue={settings?.invoice_template} label="Default invoice template" />
         <label>
           Default currency
           <input name="default_currency" defaultValue={settings?.default_currency || "USD"} required />

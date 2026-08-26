@@ -1,5 +1,6 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { calculateBalanceDue, calculateInvoiceStatus } from "./calculations";
+import { DEFAULT_INVOICE_TEMPLATE } from "./invoiceTemplates";
 
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Software",
@@ -30,7 +31,7 @@ export async function ensureUserDefaults(supabase: SupabaseClient, user: User, w
       company_name: "Wulfzx.underground",
       default_currency: "USD",
       invoice_prefix: "WZX",
-      invoice_template: "wulfzx_blueprint"
+      invoice_template: DEFAULT_INVOICE_TEMPLATE
     },
     { onConflict: workspaceId ? "workspace_id" : "user_id", ignoreDuplicates: true }
   );

@@ -5,6 +5,7 @@ import { createInvoiceAction } from "../app/actions";
 import { calculateInvoiceTotal, calculateLineTotal, calculateSubtotal } from "../lib/calculations";
 import { formatCurrency } from "../lib/format";
 import { OfflineForm } from "./OfflineForm";
+import { InvoiceTemplateSelect } from "./InvoiceTemplateSelect";
 
 type CustomerOption = {
   id: string;
@@ -17,7 +18,7 @@ type LineItem = {
   unitPrice: number;
 };
 
-export function InvoiceForm({ customers }: { customers: CustomerOption[] }) {
+export function InvoiceForm({ customers, defaultTemplate }: { customers: CustomerOption[]; defaultTemplate?: string | null }) {
   const [items, setItems] = useState<LineItem[]>([{ description: "", quantity: 1, unitPrice: 0 }]);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
@@ -64,6 +65,7 @@ export function InvoiceForm({ customers }: { customers: CustomerOption[] }) {
       </label>
 
       <div className="two-column">
+        <InvoiceTemplateSelect defaultValue={defaultTemplate} />
         <label>
           Issue date
           <input name="issue_date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />

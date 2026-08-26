@@ -10,6 +10,10 @@ type CustomerOption = {
   name: string;
 };
 
+type Settings = {
+  invoice_template: string | null;
+};
+
 type NewInvoicePageProps = {
   searchParams: Promise<{ error?: string }>;
 };
@@ -18,7 +22,10 @@ export default async function NewInvoicePage({ searchParams }: NewInvoicePagePro
   const params = await searchParams;
   const { supabase, user, workspace } = await requireOwner();
   await ensureUserDefaults(supabase, user, workspace.id);
-  const { data: customers } = await supabase.from("customers").select("id,name").eq("workspace_id", workspace.id).order("name");
+  const [{ data: customers }, { data: settings }] = await Promise.all([
+    supabase.from("customers").select("id,name").eq("workspace_id", workspace.id).order("name"),
+    supabase.from("company_settings").select("invoice_template").eq("workspace_id", workspace.id).maybeSingle()
+  ]);
 
   return (
     <section className="card">
@@ -39,7 +46,7 @@ export default async function NewInvoicePage({ searchParams }: NewInvoicePagePro
         </div>
       ) : null}
 
-      <InvoiceForm customers={(customers ?? []) as CustomerOption[]} />
+      <InvoiceForm customers={(customers ?? []) as CustomerOption[]} defaultTemplate={(settings as Settings | null)?.invoice_template} />
     </section>
   );
 }
