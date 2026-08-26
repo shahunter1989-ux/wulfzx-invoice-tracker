@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { deleteInvoiceAction, markInvoiceStatusAction, recordPaymentAction, updateInvoiceTemplateAction } from "../../actions";
+import { deleteInvoiceAction, duplicateInvoiceAction, markInvoiceStatusAction, recordPaymentAction, updateInvoiceTemplateAction } from "../../actions";
 import { ConfirmSubmitButton } from "../../../components/ConfirmSubmitButton";
 import { InvoiceDocument } from "../../../components/InvoiceDocument";
 import { InvoiceTemplateSelect } from "../../../components/InvoiceTemplateSelect";
@@ -110,6 +110,7 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
 
       {query.error ? <div className="notice error no-print">{query.error}</div> : null}
       {query.saved === "template" ? <div className="notice success no-print">Invoice template updated.</div> : null}
+      {query.saved === "duplicated" ? <div className="notice success no-print">Duplicated invoice saved as a new draft.</div> : null}
 
       <div className="invoice-workspace">
         <InvoiceDocument detail={detail} company={settings as CompanySettings | null} />
@@ -125,6 +126,12 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
             </button>
           </form>
           <div className="action-row">
+            <form action={duplicateInvoiceAction}>
+              <input type="hidden" name="invoice_id" value={detail.id} />
+              <button type="submit" className="secondary-button">
+                Duplicate
+              </button>
+            </form>
             <form action={markInvoiceStatusAction}>
               <input type="hidden" name="invoice_id" value={detail.id} />
               <input type="hidden" name="status" value="sent" />

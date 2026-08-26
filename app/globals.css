@@ -214,6 +214,14 @@ td a {
   gap: 16px;
 }
 
+.filter-bar {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  margin: 18px 0;
+}
+
 .notice {
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -578,6 +586,85 @@ td a {
   margin-top: 6px;
 }
 
+.template-preview-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  margin: 18px 0 6px;
+}
+
+.template-preview-card {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 58px 1fr;
+  padding: 12px;
+}
+
+.template-preview-card p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.template-preview-paper {
+  background: white;
+  border: 2px solid #0b3f7d;
+  border-radius: 3px;
+  display: grid;
+  gap: 5px;
+  height: 72px;
+  padding: 8px;
+}
+
+.template-preview-paper span,
+.template-preview-paper strong,
+.template-preview-paper em {
+  background: #0b3f7d;
+  display: block;
+  height: 7px;
+}
+
+.template-preview-paper strong {
+  background: #f4b51d;
+  width: 60%;
+}
+
+.template-preview-paper em {
+  background: #d7e0ea;
+  height: 24px;
+}
+
+.template-preview-luxury_black_gold .template-preview-paper {
+  border-color: #111111;
+}
+
+.template-preview-luxury_black_gold .template-preview-paper span,
+.template-preview-luxury_black_gold .template-preview-paper em {
+  background: #111111;
+}
+
+.template-preview-ai_tech_grid .template-preview-paper {
+  border-color: #00a6e8;
+}
+
+.template-preview-ai_tech_grid .template-preview-paper span,
+.template-preview-ai_tech_grid .template-preview-paper em {
+  background: #053b73;
+}
+
+.template-preview-web_app_studio .template-preview-paper {
+  border-color: #0d5f4a;
+}
+
+.template-preview-web_app_studio .template-preview-paper span,
+.template-preview-web_app_studio .template-preview-paper em {
+  background: #0d5f4a;
+}
+
 .wulfzx-invoice {
   --blue: #0b3f7d;
   --deep-blue: #072e5f;
@@ -847,6 +934,20 @@ td a {
   color: var(--muted);
 }
 
+.quick-link-list {
+  display: grid;
+  gap: 10px;
+}
+
+.quick-link-list a {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-weight: 800;
+  padding: 12px 14px;
+}
+
 .danger-zone {
   border: 1px solid rgba(248, 113, 113, 0.35);
   border-radius: 12px;
@@ -923,6 +1024,7 @@ td a {
   .two-column,
   .line-item-header,
   .line-item-row,
+  .filter-bar,
   .totals-panel,
   .invoice-workspace,
   .invoice-doc-header,

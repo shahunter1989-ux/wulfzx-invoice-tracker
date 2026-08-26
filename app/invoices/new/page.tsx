@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ensureUserDefaults } from "../../../lib/data";
 import { InvoiceForm } from "../../../components/InvoiceForm";
+import { InvoiceTemplatePreviewGrid } from "../../../components/InvoiceTemplatePreviewGrid";
 import { requireOwner } from "../../../lib/workspace";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,7 @@ export default async function NewInvoicePage({ searchParams }: NewInvoicePagePro
         </div>
       ) : null}
 
+      <InvoiceTemplatePreviewGrid />
       <InvoiceForm customers={(customers ?? []) as CustomerOption[]} defaultTemplate={(settings as Settings | null)?.invoice_template} />
     </section>
   );

@@ -3,12 +3,12 @@ import { ConfirmSubmitButton } from "../../components/ConfirmSubmitButton";
 import { ensureUserDefaults, invoiceBalance, sumPayments } from "../../lib/data";
 import { formatCurrency, formatDate } from "../../lib/format";
 import { requireOwner } from "../../lib/workspace";
-import { deleteInvoiceAction } from "../actions";
+import { deleteInvoiceAction, duplicateInvoiceAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
 type InvoicesPageProps = {
-  searchParams: Promise<{ deleted?: string; error?: string }>;
+  searchParams: Promise<{ deleted?: string; error?: string; q?: string; status?: string }>;
 };
 
 type InvoiceRow = {
@@ -33,6 +33,13 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
     .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: false });
 
+  const rows = ((invoices ?? []) as unknown as InvoiceRow[]).filter((invoice) => {
+    const query = String(params.q ?? "").trim().toLowerCase();
+    const matchesQuery = !query || [invoice.invoice_number, invoice.customers?.name].some((value) => String(value ?? "").toLowerCase().includes(query));
+    const matchesStatus = !params.status || invoice.status === params.status;
+    return matchesQuery && matchesStatus;
+  });
+
   return (
     <section className="card">
       <div className="page-header">
@@ -47,6 +54,33 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
 
       {params.error ? <div className="notice error">{params.error}</div> : null}
       {params.deleted ? <div className="notice success">Invoice deleted.</div> : null}
+
+      <form className="filter-bar">
+        <label>
+          Search invoices
+          <input name="q" defaultValue={params.q ?? ""} placeholder="Invoice number or customer" />
+        </label>
+        <label>
+          Status
+          <select name="status" defaultValue={params.status ?? ""}>
+            <option value="">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="sent">Sent</option>
+            <option value="partially_paid">Partially paid</option>
+            <option value="paid">Paid</option>
+            <option value="overdue">Overdue</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </label>
+        <div className="action-row">
+          <button type="submit" className="secondary-button compact-action">
+            Filter
+          </button>
+          <Link className="secondary-link compact-action" href="/invoices">
+            Clear
+          </Link>
+        </div>
+      </form>
 
       <div className="table-wrap">
         <table>
@@ -64,7 +98,7 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
             </tr>
           </thead>
           <tbody>
-            {((invoices ?? []) as unknown as InvoiceRow[]).map((invoice) => (
+            {rows.map((invoice) => (
               <tr key={invoice.id}>
                 <td>
                   <Link href={`/invoices/${invoice.id}`}>{invoice.invoice_number}</Link>
@@ -79,17 +113,25 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
                   <span className="status-pill">{invoice.status.replace("_", " ")}</span>
                 </td>
                 <td>
-                  <form action={deleteInvoiceAction}>
-                    <input type="hidden" name="invoice_id" value={invoice.id} />
-                    <input type="hidden" name="return_to" value="/invoices" />
-                    <ConfirmSubmitButton className="secondary-button danger-button compact-action" confirmMessage={`Delete invoice ${invoice.invoice_number}? This cannot be undone.`}>
-                      Delete
-                    </ConfirmSubmitButton>
-                  </form>
+                  <div className="action-row">
+                    <form action={duplicateInvoiceAction}>
+                      <input type="hidden" name="invoice_id" value={invoice.id} />
+                      <button type="submit" className="secondary-button compact-action">
+                        Duplicate
+                      </button>
+                    </form>
+                    <form action={deleteInvoiceAction}>
+                      <input type="hidden" name="invoice_id" value={invoice.id} />
+                      <input type="hidden" name="return_to" value="/invoices" />
+                      <ConfirmSubmitButton className="secondary-button danger-button compact-action" confirmMessage={`Delete invoice ${invoice.invoice_number}? This cannot be undone.`}>
+                        Delete
+                      </ConfirmSubmitButton>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}
-            {(invoices ?? []).length === 0 ? (
+            {rows.length === 0 ? (
               <tr>
                 <td colSpan={9} className="empty-cell">
                   No invoices yet. Create one after adding a customer.

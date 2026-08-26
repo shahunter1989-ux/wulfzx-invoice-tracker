@@ -9,7 +9,7 @@ import { createExpenseAction, deleteExpenseAction } from "../actions";
 export const dynamic = "force-dynamic";
 
 type ReceiptsPageProps = {
-  searchParams: Promise<{ deleted?: string; error?: string; saved?: string }>;
+  searchParams: Promise<{ deleted?: string; error?: string; saved?: string; q?: string; category?: string; method?: string }>;
 };
 
 type Category = {
@@ -39,6 +39,17 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
       .eq("workspace_id", workspace.id)
       .order("expense_date", { ascending: false })
   ]);
+  const categoryRows = (categories ?? []) as Category[];
+  const expenseRows = ((expenses ?? []) as unknown as Expense[]).filter((expense) => {
+    const query = String(params.q ?? "").trim().toLowerCase();
+    const matchesQuery = !query || [expense.vendor, expense.expense_categories?.name, expense.payment_method].some((value) => String(value ?? "").toLowerCase().includes(query));
+    const matchesCategory = !params.category || expense.expense_categories?.name === params.category;
+    const matchesMethod = !params.method || expense.payment_method === params.method;
+    return matchesQuery && matchesCategory && matchesMethod;
+  });
+  const monthStartText = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+  const expensesThisMonth = ((expenses ?? []) as unknown as Expense[]).filter((expense) => expense.expense_date >= monthStartText).reduce((sum, expense) => sum + Number(expense.amount ?? 0), 0);
+  const filteredTotal = expenseRows.reduce((sum, expense) => sum + Number(expense.amount ?? 0), 0);
 
   return (
     <section className="grid">
@@ -58,7 +69,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
               Category
               <select name="category_id">
                 <option value="">Uncategorized</option>
-                {((categories ?? []) as Category[]).map((category) => (
+                {categoryRows.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
@@ -104,7 +115,39 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
       </div>
 
       <div className="card">
-        <h2>Recent Expenses</h2>
+        <div className="page-header">
+          <div>
+            <h2>Recent Expenses</h2>
+            <p className="muted">
+              This month: {formatCurrency(expensesThisMonth)} | Filtered total: {formatCurrency(filteredTotal)}
+            </p>
+          </div>
+        </div>
+        <form className="filter-bar">
+          <label>
+            Search
+            <input name="q" defaultValue={params.q ?? ""} placeholder="Vendor, category, or method" />
+          </label>
+          <label>
+            Category
+            <select name="category" defaultValue={params.category ?? ""}>
+              <option value="">All categories</option>
+              {categoryRows.map((category) => (
+                <option key={category.id} value={category.name}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="action-row">
+            <button type="submit" className="secondary-button compact-action">
+              Filter
+            </button>
+            <Link className="secondary-link compact-action" href="/receipts">
+              Clear
+            </Link>
+          </div>
+        </form>
         <div className="table-wrap">
           <table>
             <thead>
@@ -119,7 +162,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
               </tr>
             </thead>
             <tbody>
-              {((expenses ?? []) as unknown as Expense[]).map((expense) => (
+              {expenseRows.map((expense) => (
                 <tr key={expense.id}>
                   <td>{formatDate(expense.expense_date)}</td>
                   <td>{expense.vendor || "-"}</td>
@@ -145,7 +188,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
                   </td>
                 </tr>
               ))}
-              {(expenses ?? []).length === 0 ? (
+              {expenseRows.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="empty-cell">
                     No expenses recorded yet.

@@ -1,4 +1,5 @@
 import { updateSettingsAction } from "../actions";
+import { InvoiceTemplatePreviewGrid } from "../../components/InvoiceTemplatePreviewGrid";
 import { InvoiceTemplateSelect } from "../../components/InvoiceTemplateSelect";
 import { ensureUserDefaults } from "../../lib/data";
 import { requireOwner } from "../../lib/workspace";
@@ -37,6 +38,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       <p className="muted">Company settings for Wulfzx.underground.</p>
       {params.error ? <div className="notice error">{params.error}</div> : null}
       {params.saved ? <div className="notice success">Settings saved.</div> : null}
+      <InvoiceTemplatePreviewGrid />
       <form action={updateSettingsAction} className="grid form-grid">
         <label>
           Company name

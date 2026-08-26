@@ -8,7 +8,7 @@ import { deleteCustomerAction } from "../actions";
 export const dynamic = "force-dynamic";
 
 type CustomersPageProps = {
-  searchParams: Promise<{ deleted?: string; error?: string; saved?: string }>;
+  searchParams: Promise<{ deleted?: string; error?: string; saved?: string; q?: string }>;
 };
 
 type Customer = {
@@ -26,6 +26,7 @@ type InvoiceCustomer = {
 
 export default async function CustomersPage({ searchParams }: CustomersPageProps) {
   const params = await searchParams;
+  const query = String(params.q ?? "").trim().toLowerCase();
   const { supabase, user, workspace } = await requireOwner();
   await ensureUserDefaults(supabase, user, workspace.id);
   const [{ data: customers }, { data: invoiceCustomers }] = await Promise.all([
@@ -40,10 +41,15 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
     return counts;
   }, {});
 
-  const rows = ((customers ?? []) as Customer[]).map((customer) => ({
-    ...customer,
-    invoiceCount: invoiceCounts[customer.id] ?? 0
-  }));
+  const rows = ((customers ?? []) as Customer[])
+    .filter((customer) => {
+      if (!query) return true;
+      return [customer.name, customer.contact_name, customer.email, customer.phone].some((value) => String(value ?? "").toLowerCase().includes(query));
+    })
+    .map((customer) => ({
+      ...customer,
+      invoiceCount: invoiceCounts[customer.id] ?? 0
+    }));
 
   return (
     <section className="card">
@@ -61,6 +67,21 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
       {params.saved ? <div className="notice success">Customer updated.</div> : null}
       {params.deleted ? <div className="notice success">Customer deleted.</div> : null}
 
+      <form className="filter-bar">
+        <label>
+          Search customers
+          <input name="q" defaultValue={params.q ?? ""} placeholder="Name, contact, email, or phone" />
+        </label>
+        <button type="submit" className="secondary-button">
+          Search
+        </button>
+        {params.q ? (
+          <Link className="secondary-link" href="/customers">
+            Clear
+          </Link>
+        ) : null}
+      </form>
+
       <div className="table-wrap">
         <table>
           <thead>
@@ -76,7 +97,9 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
           <tbody>
             {rows.map((customer) => (
               <tr key={customer.id}>
-                <td>{customer.name}</td>
+                <td>
+                  <Link href={`/customers/${customer.id}`}>{customer.name}</Link>
+                </td>
                 <td>{customer.contact_name || "-"}</td>
                 <td>{customer.email || "-"}</td>
                 <td>{customer.phone || "-"}</td>
@@ -85,6 +108,9 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
                   <div className="action-row">
                     <Link className="secondary-link compact-action" href={`/customers/${customer.id}/edit`}>
                       Edit
+                    </Link>
+                    <Link className="secondary-link compact-action" href={`/customers/${customer.id}`}>
+                      View
                     </Link>
                     {customer.invoiceCount === 0 ? (
                       <form action={deleteCustomerAction}>

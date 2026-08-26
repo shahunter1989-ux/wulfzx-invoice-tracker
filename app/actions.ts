@@ -286,6 +286,111 @@ export async function deleteInvoiceAction(formData: FormData) {
   redirect(`${safeReturnTo}?deleted=1`);
 }
 
+export async function duplicateInvoiceAction(formData: FormData) {
+  const { supabase, user, workspace } = await requireOwner();
+  const invoiceId = toText(formData.get("invoice_id"));
+
+  if (!invoiceId) {
+    redirect("/invoices?error=Invoice%20record%20is%20required");
+  }
+
+  const { data: source, error: sourceError } = await supabase
+    .from("invoices")
+    .select(
+      "customer_id,invoice_template,discount_amount,tax_amount,shipping_amount,deposit_amount,ship_to_name,ship_to_address,ship_to_contact,payment_terms,notes,terms,invoice_items(description,quantity,unit_price,line_total)"
+    )
+    .eq("id", invoiceId)
+    .eq("workspace_id", workspace.id)
+    .single();
+
+  if (sourceError || !source) {
+    redirect(`/invoices?error=${encodeURIComponent(sourceError?.message || "Invoice not found")}`);
+  }
+
+  const items = (source.invoice_items ?? []).map((item) => ({
+    description: String(item.description ?? ""),
+    quantity: Number(item.quantity ?? 0),
+    unitPrice: Number(item.unit_price ?? 0)
+  }));
+
+  if (!source.customer_id || items.length === 0) {
+    redirect(`/invoices?error=${encodeURIComponent("Only invoices with a customer and line items can be duplicated")}`);
+  }
+
+  const issueDate = new Date().toISOString().slice(0, 10);
+  const { data: settings } = await supabase.from("company_settings").select("invoice_prefix").eq("workspace_id", workspace.id).maybeSingle();
+  const prefix = settings?.invoice_prefix || "WZX";
+  const year = new Date(`${issueDate}T00:00:00`).getFullYear();
+  const { data: invoiceNumber, error: numberError } = await supabase.rpc("next_workspace_invoice_number", {
+    p_workspace_id: workspace.id,
+    p_prefix: prefix,
+    p_year: year
+  });
+
+  if (numberError || !invoiceNumber) {
+    redirect(`/invoices?error=${encodeURIComponent(numberError?.message || "Could not generate invoice number")}`);
+  }
+
+  const subtotal = calculateSubtotal(items);
+  const discountAmount = Number(source.discount_amount ?? 0);
+  const taxAmount = Number(source.tax_amount ?? 0);
+  const shippingAmount = Number(source.shipping_amount ?? 0);
+  const totalAmount = calculateInvoiceTotal(subtotal, discountAmount, taxAmount, shippingAmount);
+
+  const { data: invoice, error: invoiceError } = await supabase
+    .from("invoices")
+    .insert({
+      user_id: user.id,
+      workspace_id: workspace.id,
+      customer_id: source.customer_id,
+      invoice_number: invoiceNumber,
+      status: "draft" satisfies InvoiceStatus,
+      issue_date: issueDate,
+      due_date: null,
+      subtotal,
+      discount_amount: discountAmount,
+      tax_amount: taxAmount,
+      shipping_amount: shippingAmount,
+      deposit_amount: Number(source.deposit_amount ?? 0),
+      total_amount: totalAmount,
+      invoice_template: normalizeInvoiceTemplate(source.invoice_template),
+      ship_to_name: source.ship_to_name || null,
+      ship_to_address: source.ship_to_address || null,
+      ship_to_contact: source.ship_to_contact || null,
+      payment_terms: source.payment_terms || null,
+      notes: source.notes || null,
+      terms: source.terms || null
+    })
+    .select("id")
+    .single();
+
+  if (invoiceError || !invoice) {
+    redirect(`/invoices?error=${encodeURIComponent(invoiceError?.message || "Could not duplicate invoice")}`);
+  }
+
+  const { error: itemsError } = await supabase.from("invoice_items").insert(
+    items.map((item) => ({
+      user_id: user.id,
+      workspace_id: workspace.id,
+      invoice_id: invoice.id,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+      line_total: calculateLineTotal(item.quantity, item.unitPrice)
+    }))
+  );
+
+  if (itemsError) {
+    await supabase.from("invoices").delete().eq("id", invoice.id).eq("workspace_id", workspace.id);
+    redirect(`/invoices?error=${encodeURIComponent(itemsError.message)}`);
+  }
+
+  await logAuditEvent(supabase, { workspaceId: workspace.id, actorId: user.id, action: "duplicate", entityType: "invoice", entityId: invoice.id, metadata: { sourceInvoiceId: invoiceId, invoiceNumber } });
+  revalidatePath("/dashboard");
+  revalidatePath("/invoices");
+  redirect(`/invoices/${invoice.id}?saved=duplicated`);
+}
+
 export async function markInvoiceStatusAction(formData: FormData) {
   const { supabase, user, workspace } = await requireOwner();
   const invoiceId = toText(formData.get("invoice_id"));

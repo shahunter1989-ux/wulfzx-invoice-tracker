@@ -8,7 +8,7 @@ import { requireOwner } from "../../lib/workspace";
 export const dynamic = "force-dynamic";
 
 type PaymentsPageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; method?: string; q?: string; from?: string; to?: string }>;
 };
 
 type InvoiceOption = {
@@ -43,6 +43,18 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
     .select("id,payment_date,amount,payment_method,reference_number,invoices(id,invoice_number,customers(name))")
     .eq("workspace_id", workspace.id)
     .order("payment_date", { ascending: false });
+
+  const paymentRows = ((payments ?? []) as unknown as PaymentRow[]).filter((payment) => {
+    const query = String(params.q ?? "").trim().toLowerCase();
+    const matchesQuery = !query || [payment.invoices?.invoice_number, payment.invoices?.customers?.name, payment.reference_number].some((value) => String(value ?? "").toLowerCase().includes(query));
+    const matchesMethod = !params.method || payment.payment_method === params.method;
+    const matchesFrom = !params.from || payment.payment_date >= params.from;
+    const matchesTo = !params.to || payment.payment_date <= params.to;
+    return matchesQuery && matchesMethod && matchesFrom && matchesTo;
+  });
+  const monthStartText = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+  const paidThisMonth = ((payments ?? []) as unknown as PaymentRow[]).filter((payment) => payment.payment_date >= monthStartText).reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0);
+  const filteredTotal = paymentRows.reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0);
 
   return (
     <section className="grid">
@@ -100,7 +112,42 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
       </div>
 
       <div className="card">
-        <h2>Recent Payments</h2>
+        <div className="page-header">
+          <div>
+            <h2>Recent Payments</h2>
+            <p className="muted">
+              This month: {formatCurrency(paidThisMonth)} | Filtered total: {formatCurrency(filteredTotal)}
+            </p>
+          </div>
+        </div>
+        <form className="filter-bar">
+          <label>
+            Search
+            <input name="q" defaultValue={params.q ?? ""} placeholder="Invoice, client, or reference" />
+          </label>
+          <label>
+            Method
+            <select name="method" defaultValue={params.method ?? ""}>
+              <option value="">All methods</option>
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank transfer</option>
+              <option value="card">Card</option>
+              <option value="paypal">PayPal</option>
+              <option value="zelle">Zelle</option>
+              <option value="cash_app">Cash App</option>
+              <option value="check">Check</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <div className="action-row">
+            <button type="submit" className="secondary-button compact-action">
+              Filter
+            </button>
+            <Link className="secondary-link compact-action" href="/payments">
+              Clear
+            </Link>
+          </div>
+        </form>
         <div className="table-wrap">
           <table>
             <thead>
@@ -113,7 +160,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               </tr>
             </thead>
             <tbody>
-              {((payments ?? []) as unknown as PaymentRow[]).map((payment) => (
+              {paymentRows.map((payment) => (
                 <tr key={payment.id}>
                   <td>{formatDate(payment.payment_date)}</td>
                   <td>{payment.invoices ? <Link href={`/invoices/${payment.invoices.id}`}>{payment.invoices.invoice_number}</Link> : "-"}</td>
@@ -122,7 +169,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                   <td>{payment.payment_method.replace("_", " ")}</td>
                 </tr>
               ))}
-              {(payments ?? []).length === 0 ? (
+              {paymentRows.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="empty-cell">
                     No payments recorded yet.
