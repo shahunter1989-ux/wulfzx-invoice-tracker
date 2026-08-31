@@ -73,6 +73,10 @@ export default async function CustomerDetailPage({ params }: CustomerDetailPageP
 
       <div className="grid grid-3">
         <div className="card">
+          <p className="muted">Invoices</p>
+          <h2>{invoiceRows.length}</h2>
+        </div>
+        <div className="card">
           <p className="muted">Total Billed</p>
           <h2>{formatCurrency(totalBilled)}</h2>
         </div>
