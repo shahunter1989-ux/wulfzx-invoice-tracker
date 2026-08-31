@@ -9,7 +9,7 @@ import { createExpenseAction, deleteExpenseAction } from "../actions";
 export const dynamic = "force-dynamic";
 
 type ReceiptsPageProps = {
-  searchParams: Promise<{ deleted?: string; error?: string; saved?: string; q?: string; category?: string; method?: string }>;
+  searchParams: Promise<{ deleted?: string; error?: string; saved?: string; q?: string; category?: string; method?: string; from?: string; to?: string }>;
 };
 
 type Category = {
@@ -45,7 +45,9 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
     const matchesQuery = !query || [expense.vendor, expense.expense_categories?.name, expense.payment_method].some((value) => String(value ?? "").toLowerCase().includes(query));
     const matchesCategory = !params.category || expense.expense_categories?.name === params.category;
     const matchesMethod = !params.method || expense.payment_method === params.method;
-    return matchesQuery && matchesCategory && matchesMethod;
+    const matchesFrom = !params.from || expense.expense_date >= params.from;
+    const matchesTo = !params.to || expense.expense_date <= params.to;
+    return matchesQuery && matchesCategory && matchesMethod && matchesFrom && matchesTo;
   });
   const monthStartText = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
   const expensesThisMonth = ((expenses ?? []) as unknown as Expense[]).filter((expense) => expense.expense_date >= monthStartText).reduce((sum, expense) => sum + Number(expense.amount ?? 0), 0);
@@ -138,6 +140,28 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
                 </option>
               ))}
             </select>
+          </label>
+          <label>
+            Method
+            <select name="method" defaultValue={params.method ?? ""}>
+              <option value="">All methods</option>
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank transfer</option>
+              <option value="card">Card</option>
+              <option value="paypal">PayPal</option>
+              <option value="zelle">Zelle</option>
+              <option value="cash_app">Cash App</option>
+              <option value="check">Check</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label>
+            From
+            <input name="from" type="date" defaultValue={params.from ?? ""} />
+          </label>
+          <label>
+            To
+            <input name="to" type="date" defaultValue={params.to ?? ""} />
           </label>
           <div className="action-row">
             <button type="submit" className="secondary-button compact-action">

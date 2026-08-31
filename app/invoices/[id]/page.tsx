@@ -89,6 +89,9 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
 
   const detail = invoice as unknown as Invoice;
   const activeTemplate = getInvoiceTemplate(detail.invoice_template);
+  const amountPaid = Number(detail.deposit_amount ?? 0) + detail.payments.reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0);
+  const balanceDue = Math.max(0, Number(detail.total_amount ?? 0) - amountPaid);
+  const statusLabel = detail.status.replace("_", " ");
 
   return (
     <section className="invoice-detail">
@@ -117,6 +120,28 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
 
         <aside className="card no-print">
           <h2>Invoice Actions</h2>
+          <div className="status-panel">
+            <div>
+              <span>Status</span>
+              <strong className="status-pill">{statusLabel}</strong>
+            </div>
+            <div>
+              <span>Total</span>
+              <strong>{formatCurrency(detail.total_amount)}</strong>
+            </div>
+            <div>
+              <span>Paid</span>
+              <strong>{formatCurrency(amountPaid)}</strong>
+            </div>
+            <div>
+              <span>Balance Due</span>
+              <strong>{formatCurrency(balanceDue)}</strong>
+            </div>
+            <div>
+              <span>Due Date</span>
+              <strong>{formatDate(detail.due_date)}</strong>
+            </div>
+          </div>
           <p className="muted">Current template: {activeTemplate.name}</p>
           <form action={updateInvoiceTemplateAction} className="grid form-grid">
             <input type="hidden" name="invoice_id" value={detail.id} />
@@ -137,6 +162,13 @@ export default async function InvoiceDetailPage({ params, searchParams }: Invoic
               <input type="hidden" name="status" value="sent" />
               <button type="submit" className="secondary-button">
                 Mark Sent
+              </button>
+            </form>
+            <form action={markInvoiceStatusAction}>
+              <input type="hidden" name="invoice_id" value={detail.id} />
+              <input type="hidden" name="status" value="draft" />
+              <button type="submit" className="secondary-button">
+                Mark Draft
               </button>
             </form>
             <form action={markInvoiceStatusAction}>

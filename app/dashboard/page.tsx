@@ -51,6 +51,7 @@ export default async function DashboardPage() {
   const totalExpenses = expenseRows.reduce((sum, expense) => sum + Number(expense.amount ?? 0), 0);
   const paidThisMonth = paymentRows.filter((payment) => payment.payment_date >= monthStartText).reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0);
   const expensesThisMonth = expenseRows.filter((expense) => expense.expense_date >= monthStartText).reduce((sum, expense) => sum + Number(expense.amount ?? 0), 0);
+  const unpaidInvoices = invoiceRows.filter((invoice) => invoiceBalance(invoice) > 0 && invoice.status !== "cancelled");
   const draftInvoices = invoiceRows.filter((invoice) => invoice.status === "draft");
   const overdueInvoices = invoiceRows.filter((invoice) => invoice.status === "overdue" || (invoice.due_date && invoice.due_date < new Date().toISOString().slice(0, 10) && invoiceBalance(invoice) > 0));
   const needsAttention = [...overdueInvoices, ...draftInvoices.filter((draft) => !overdueInvoices.some((invoice) => invoice.id === draft.id))].slice(0, 8);
@@ -75,6 +76,8 @@ export default async function DashboardPage() {
       <div className="grid grid-3" style={{ marginTop: 24 }}>
         <StatCard label="Unpaid Balance" value={formatCurrency(outstanding)} />
         <StatCard label="Overdue Invoices" value={String(overdueInvoices.length)} />
+        <StatCard label="Unpaid Invoices" value={String(unpaidInvoices.length)} />
+        <StatCard label="Draft Invoices" value={String(draftInvoices.length)} />
         <StatCard label="Paid This Month" value={formatCurrency(paidThisMonth)} />
         <StatCard label="Expenses This Month" value={formatCurrency(expensesThisMonth)} />
         <StatCard label="Estimated Net This Month" value={formatCurrency(paidThisMonth - expensesThisMonth)} />
@@ -110,6 +113,18 @@ export default async function DashboardPage() {
         <div className="card">
           <h2>Workflow Checks</h2>
           <div className="mini-list">
+            <div>
+              <strong>{unpaidInvoices.length} unpaid invoices</strong>
+              <span>
+                <Link href="/reports">Review balances in reports</Link>
+              </span>
+            </div>
+            <div>
+              <strong>{draftInvoices.length} draft invoices</strong>
+              <span>
+                <Link href="/invoices?status=draft">Open draft invoices</Link>
+              </span>
+            </div>
             <div>
               <strong>{pendingApprovals ?? 0} pending approvals</strong>
               <span>

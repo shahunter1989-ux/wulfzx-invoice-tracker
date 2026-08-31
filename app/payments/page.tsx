@@ -139,6 +139,14 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               <option value="other">Other</option>
             </select>
           </label>
+          <label>
+            From
+            <input name="from" type="date" defaultValue={params.from ?? ""} />
+          </label>
+          <label>
+            To
+            <input name="to" type="date" defaultValue={params.to ?? ""} />
+          </label>
           <div className="action-row">
             <button type="submit" className="secondary-button compact-action">
               Filter

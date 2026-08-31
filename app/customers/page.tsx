@@ -90,6 +90,7 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
               <th>Contact</th>
               <th>Email</th>
               <th>Phone</th>
+              <th>Invoices</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -103,6 +104,7 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
                 <td>{customer.contact_name || "-"}</td>
                 <td>{customer.email || "-"}</td>
                 <td>{customer.phone || "-"}</td>
+                <td>{customer.invoiceCount}</td>
                 <td>{formatDate(customer.created_at.slice(0, 10))}</td>
                 <td>
                   <div className="action-row">
@@ -128,9 +130,9 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
             ))}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="empty-cell">
-                  No customers yet. Add one before creating your first invoice.
-                </td>
+                  <td colSpan={7} className="empty-cell">
+                    No customers yet. Add one before creating your first invoice.
+                  </td>
               </tr>
             ) : null}
           </tbody>

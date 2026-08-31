@@ -218,7 +218,7 @@ td a {
   align-items: end;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(220px, 1fr) auto auto;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   margin: 18px 0;
 }
 
@@ -916,6 +916,28 @@ td a {
   display: flex;
   justify-content: space-between;
   gap: 24px;
+}
+
+.status-panel {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 18px;
+  padding: 14px;
+}
+
+.status-panel div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.status-panel span {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .mini-list {

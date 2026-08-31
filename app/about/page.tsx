@@ -101,6 +101,18 @@ export default async function AboutPage() {
           Use the same owner login on each computer. Synced records follow the account; unsynced drafts stay on the device where they were created until they upload.
         </p>
       </section>
+
+      <section className="card">
+        <h2>Daily Workflow</h2>
+        <ol className="instruction-list">
+          <li>Add or update the customer before creating a new invoice.</li>
+          <li>Create the invoice, choose the template, review totals, then mark it sent when it leaves WZXU.</li>
+          <li>Use Print or Download PDF from the invoice detail page to send or save the customer copy.</li>
+          <li>Record deposits and payments from the invoice detail page or Payments page.</li>
+          <li>Add receipts and expenses as soon as they happen so monthly net stays accurate.</li>
+          <li>Review Dashboard and Reports weekly, then download CSV exports as a private backup.</li>
+        </ol>
+      </section>
     </section>
   );
 }

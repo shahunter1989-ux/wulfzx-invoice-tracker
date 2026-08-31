@@ -21,6 +21,7 @@ Create a polished owner-only invoice and business tracking app for AI, websites,
 - CSV exports for customers, invoices, payments, expenses, and submissions.
 - Offline draft queue for new customers, invoices, payments, and expenses.
 - Submit-only employee/intern access for practice and future use.
+- Installable PWA desktop mode with manifest, Windows-friendly icons, About/Install guidance, and desktop checklist documentation.
 
 ## Access Model
 
@@ -38,6 +39,7 @@ Create a polished owner-only invoice and business tracking app for AI, websites,
 - Vercel production deployment.
 - `pdf-lib` for invoice PDF generation.
 - IndexedDB for temporary offline drafts.
+- Web app manifest and service worker for installable PWA use on Windows through Chrome or Edge.
 
 ## Design Direction
 
