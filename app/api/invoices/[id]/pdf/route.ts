@@ -158,16 +158,15 @@ function drawHero(page: PDFPage, bold: PDFFont, x: number, top: number, rightX: 
 
 function drawCompanyPanel(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, y: number, width: number, settings: CompanySettings | null, theme: PdfTheme) {
   drawPanel(page, x, y, width, 96, theme);
-  page.drawEllipse({ x: x + 66, y: y + 48, xScale: 32, yScale: 32, borderColor: theme.primary, borderWidth: 8 });
-  drawText(page, "WZXU", x + 40, y + 40, 14, bold, theme.primary);
   const lines = [
     settings?.company_name || "WZXU",
     settings?.company_address,
     settings?.company_phone ? `Phone: ${settings.company_phone}` : null,
     settings?.company_email ? `Email: ${settings.company_email}` : null
   ].filter(Boolean) as string[];
-  drawText(page, lines[0].toUpperCase(), x + 130, y + 70, 13, bold, INK);
-  lines.slice(1, 4).forEach((line, index) => drawText(page, line, x + 130, y + 50 - index * 14, 9, font, INK));
+  drawText(page, truncate(lines[0].toUpperCase(), 34), x + 18, y + 70, 13, bold, INK);
+  const detailLines = lines.slice(1).flatMap((line) => wrapText(line, 44)).slice(0, 4);
+  detailLines.forEach((line, index) => drawText(page, line, x + 18, y + 50 - index * 13, 9, font, INK));
 }
 
 function drawFactsPanel(page: PDFPage, font: PDFFont, bold: PDFFont, x: number, y: number, width: number, detail: Invoice, theme: PdfTheme) {

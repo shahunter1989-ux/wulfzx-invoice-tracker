@@ -81,8 +81,10 @@ export function InvoiceDocument({ detail, company }: InvoiceDocumentProps) {
       <section className="invoice-template-grid invoice-template-top">
         <div className="invoice-template-panel company-panel">
           <h3>{companyName}</h3>
-          {companyLines.map((line) => (
-            <p key={String(line)}>{line}</p>
+          {companyLines.map((line, index) => (
+            <p className="company-detail-line" key={`${String(line)}-${index}`}>
+              {line}
+            </p>
           ))}
           {companyLines.length === 0 ? <p>AI, websites, apps, and automation services.</p> : null}
         </div>

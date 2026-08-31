@@ -747,13 +747,6 @@ td a {
   position: relative;
 }
 
-.company-panel {
-  align-items: center;
-  display: grid;
-  grid-template-columns: 150px 1fr;
-  min-height: 150px;
-}
-
 .wulfzx-mark {
   align-items: center;
   border: 10px solid var(--blue);
@@ -772,6 +765,25 @@ td a {
   color: #111827;
   font-size: 20px;
   margin-bottom: 10px;
+}
+
+.company-panel {
+  align-content: start;
+  display: grid;
+  gap: 8px;
+  min-height: 150px;
+}
+
+.company-panel h3,
+.company-panel p,
+.address-panel h3,
+.address-panel p,
+.invoice-facts span {
+  overflow-wrap: anywhere;
+}
+
+.company-detail-line {
+  line-height: 1.35;
 }
 
 .invoice-facts {
@@ -1095,8 +1107,7 @@ td a {
   .wulfzx-invoice-hero,
   .wulfzx-top-grid,
   .wulfzx-address-grid,
-  .wulfzx-bottom-grid,
-  .company-panel {
+  .wulfzx-bottom-grid {
     grid-template-columns: 1fr;
   }
 
