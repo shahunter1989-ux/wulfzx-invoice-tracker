@@ -13,6 +13,24 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["business", "productivity", "finance"],
     icons: [
       {
+        src: "/icons/wzxu-icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any"
+      },
+      {
+        src: "/icons/wzxu-icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any"
+      },
+      {
+        src: "/icons/wzxu-maskable-icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable"
+      },
+      {
         src: "/icons/wzxu-icon.svg",
         sizes: "any",
         type: "image/svg+xml",

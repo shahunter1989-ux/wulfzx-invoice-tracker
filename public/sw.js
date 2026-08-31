@@ -1,5 +1,12 @@
 const CACHE_NAME = "wzxu-invoice-tracker-v1";
-const STATIC_ASSETS = ["/manifest.webmanifest", "/icons/wzxu-icon.svg", "/icons/wzxu-maskable-icon.svg"];
+const STATIC_ASSETS = [
+  "/manifest.webmanifest",
+  "/icons/wzxu-icon.svg",
+  "/icons/wzxu-maskable-icon.svg",
+  "/icons/wzxu-icon-192.png",
+  "/icons/wzxu-icon-512.png",
+  "/icons/wzxu-maskable-icon-512.png"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));

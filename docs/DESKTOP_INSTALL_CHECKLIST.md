@@ -6,10 +6,18 @@ Use the hosted app as an installable web app first. This gives a desktop-style a
 
 1. Open `https://wulfzx-invoice-tracker.vercel.app` in Microsoft Edge or Google Chrome.
 2. Sign in with the owner account.
-3. Open the browser menu.
-4. Choose **Apps > Install this site as an app** or **Install WZXU Invoice Tracker**.
-5. Pin the installed app to the taskbar or Start menu.
-6. Repeat these steps on the laptop or any other computer.
+3. In Microsoft Edge, open **Settings and more > Apps > Install this site as an app**.
+4. In Google Chrome, open **Customize and control Google Chrome > Cast, save, and share > Install page as app**.
+5. Use the name **WZXU Invoice Tracker**.
+6. Pin the installed app to the taskbar or Start menu.
+7. Repeat these steps on the laptop or any other computer.
+
+## Updating The Installed App
+
+1. Keep using `https://wulfzx-invoice-tracker.vercel.app`; the installed app points to the same production site.
+2. After a deployment, close and reopen the installed app.
+3. If a screen still looks old, press **Ctrl+R** once inside the installed app.
+4. Use the same owner login on every computer.
 
 ## How Data Works
 
@@ -17,6 +25,7 @@ Use the hosted app as an installable web app first. This gives a desktop-style a
 - Each computer sees the same synced customers, invoices, payments, expenses, and reports after login.
 - Offline drafts are temporary and stay only on the device/browser where they were created.
 - Reports update only after data is saved or synced to Supabase.
+- Clearing browser storage, resetting the app, or uninstalling the browser profile can remove unsynced drafts.
 
 ## Backup Routine
 

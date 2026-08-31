@@ -22,9 +22,10 @@ export default async function AboutPage() {
         <section className="card">
           <h2>Install On Windows</h2>
           <ol className="instruction-list">
-            <li>Open the live app in Microsoft Edge or Google Chrome.</li>
+            <li>Open https://wulfzx-invoice-tracker.vercel.app in Microsoft Edge or Google Chrome.</li>
             <li>Sign in with the owner account.</li>
-            <li>Open the browser menu and choose Install app or Apps &gt; Install this site as an app.</li>
+            <li>In Edge, open Settings and more, then Apps, then Install this site as an app.</li>
+            <li>In Chrome, open the menu and choose Cast, save, and share, then Install page as app.</li>
             <li>Name it WZXU Invoice Tracker and pin it to the taskbar or Start menu.</li>
           </ol>
         </section>
@@ -45,6 +46,10 @@ export default async function AboutPage() {
         <section className="card">
           <h2>Current Readiness</h2>
           <div className="mini-list">
+            <div>
+              <strong>Version</strong>
+              <span>0.1.0 personal desktop-ready PWA.</span>
+            </div>
             <div>
               <strong>Personal desktop use</strong>
               <span>Ready as an installed web app.</span>
@@ -85,6 +90,16 @@ export default async function AboutPage() {
             Open Settings
           </Link>
         </div>
+      </section>
+
+      <section className="card">
+        <h2>Updates After Deployment</h2>
+        <p className="muted">
+          The installed app uses the same live website. After a new deployment, close and reopen the installed app, then refresh once if it still shows an older screen.
+        </p>
+        <p className="muted">
+          Use the same owner login on each computer. Synced records follow the account; unsynced drafts stay on the device where they were created until they upload.
+        </p>
       </section>
     </section>
   );
