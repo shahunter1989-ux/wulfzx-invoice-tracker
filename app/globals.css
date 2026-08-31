@@ -948,6 +948,19 @@ td a {
   padding: 12px 14px;
 }
 
+.instruction-list {
+  color: var(--muted);
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.instruction-list li::marker {
+  color: #38bdf8;
+  font-weight: 900;
+}
+
 .danger-zone {
   border: 1px solid rgba(248, 113, 113, 0.35);
   border-radius: 12px;

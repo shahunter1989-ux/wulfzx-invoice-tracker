@@ -36,6 +36,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     <section className="card narrow-card">
       <h1>Settings</h1>
       <p className="muted">Company settings for WZXU.</p>
+      <p className="muted">
+        Need the desktop install notes? <a href="/about">Open About / Install</a>.
+      </p>
       {params.error ? <div className="notice error">{params.error}</div> : null}
       {params.saved ? <div className="notice success">Settings saved.</div> : null}
       <InvoiceTemplatePreviewGrid />

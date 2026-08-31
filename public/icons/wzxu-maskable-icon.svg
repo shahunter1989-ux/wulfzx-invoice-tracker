@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="WZXU maskable icon">
+  <rect width="512" height="512" fill="#05070b"/>
+  <circle cx="256" cy="246" r="156" fill="#07111f" stroke="#0ea5e9" stroke-width="20"/>
+  <path d="M126 198h70l31 102 36-102h58l36 102 31-102h70l-66 172h-66l-34-94-34 94h-66z" fill="#f8fafc"/>
+  <path d="M136 400h240" stroke="#0ea5e9" stroke-width="16" stroke-linecap="round"/>
+  <path d="M406 400h34" stroke="#f4b51d" stroke-width="16" stroke-linecap="round"/>
+</svg>

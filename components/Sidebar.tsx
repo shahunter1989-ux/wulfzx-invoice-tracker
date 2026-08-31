@@ -14,7 +14,8 @@ const ownerLinks = [
   { href: "/activity", label: "Activity" },
   { href: "/exports", label: "Exports" },
   { href: "/offline", label: "Offline Sync" },
-  { href: "/settings", label: "Settings" }
+  { href: "/settings", label: "Settings" },
+  { href: "/about", label: "About / Install" }
 ];
 
 const submitterLinks = [
